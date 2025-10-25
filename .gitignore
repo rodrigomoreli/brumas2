@@ -1,0 +1,54 @@
+# Arquivos e diretórios do ambiente virtual
+venv/
+.env/
+*.env
+
+# Arquivos de compilação Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+*.out
+*.pid
+
+# Configurações do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Configurações do IDE/Editor
+.vscode/
+.idea/
+*.swp
+
+# Dependências instaladas
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Arquivos de banco de dados locais
+*.sqlite3
+*.db
+
+# Arquivos de teste e cobertura
+htmlcov/
+.tox/
+.nox/
+.coverage
+coverage.xml
+*.cover
+*.py,cover
+
+# Arquivos gerados por ferramentas de build
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Arquivos de containers/Docker
+docker-compose.override.yml
+
+# Outros arquivos sensíveis ou desnecessários
+secrets.json
