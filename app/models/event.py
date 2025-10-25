@@ -1,3 +1,5 @@
+# app/models/event.py
+
 from sqlalchemy import Column, Integer, String, DateTime, Date, Enum as SQLAlchemyEnum, Numeric, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func

@@ -1,3 +1,4 @@
+# app/models/dimension.py
 # OS MODELOS DE DIMENSÃO. É PARA O SQLALCHEMY SAIBA COMO CRIAR AS TABELAS NO BANCO DE DADOS.
 from sqlalchemy import Column, Integer, String, DateTime, Numeric, Enum as SQLAlchemyEnum
 from sqlalchemy.sql import func

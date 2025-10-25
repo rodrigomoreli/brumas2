@@ -1,3 +1,4 @@
+# app/crud/crud_event.py
 from sqlalchemy.orm import Session, joinedload
 
 from app.models import event as models_event

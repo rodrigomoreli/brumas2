@@ -1,3 +1,4 @@
+# app/schemas/event.py
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import date

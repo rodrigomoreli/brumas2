@@ -1,3 +1,4 @@
+# app/crud/crud_dimension.py
 from app.crud.base import CRUDBase
 from app.models import dimension as models
 
@@ -41,4 +42,3 @@ cliente = CRUDCliente(models.Cliente)
 insumo = CRUDInsumo(models.Insumo)
 local_evento = CRUDLocalEvento(models.LocalEvento)
 tipo_evento = CRUDTipoEvento(models.TipoEvento)
-

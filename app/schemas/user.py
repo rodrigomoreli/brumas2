@@ -1,3 +1,4 @@
+# app/schemas/user.py
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from app.models.user import UserProfile

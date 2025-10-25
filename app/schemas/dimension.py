@@ -1,3 +1,4 @@
+# app/schemas/dimension.py
 # COMO CRIAR, ATUALIZAR E RETORNAR OBJETOS DE DIMENSÃO
 
 from pydantic import BaseModel
