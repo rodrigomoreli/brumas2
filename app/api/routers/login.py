@@ -12,13 +12,11 @@ from app.schemas import token as schemas_token
 
 router = APIRouter()
 
+# Endpoint para login e obtenção de token de acesso
 @router.post("/login/access-token", response_model=schemas_token.Token)
 def login_access_token(
     db: Session = Depends(deps.get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):
-    """
-    Endpoint de login OAuth2, retorna um token de acesso JWT.
-    """
     # 1. Busca o usuário pelo username (que vem no form_data)
     user = crud_user.get_user_by_username(db, username=form_data.username)
     

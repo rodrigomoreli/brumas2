@@ -140,11 +140,12 @@ class Insumo(InsumoBase):
 
 class LocalEventoBase(BaseModel):
     descricao: Optional[str] = None
-    contato: Optional[str] = None
-    telefone: Optional[str] = None
+    endereco: Optional[str] = None
+    capacidade_maxima: Optional[int] = None
 
 class LocalEventoCreate(LocalEventoBase):
     descricao: Optional[str] = None
+    updated_at: Optional[datetime] = None
 
 class LocalEventoUpdate(LocalEventoBase):
     pass

@@ -11,7 +11,7 @@ import enum
 
 
 # ===================================================================
-# A NOVA E PODEROSA SUPER FÁBRICA DE ROTAS ATACANDO NOVAMENTE
+# Criado de uma função para gerar routers CRUD genéricos
 # ===================================================================
 
 def create_crud_router(
@@ -23,69 +23,125 @@ def create_crud_router(
     create_schema: Any,
     update_schema: Any
 ) -> APIRouter:
+    
     router = APIRouter()
 
-    # --- ENDPOINT PARA CRIAR UM ITEM ---
-    @router.post("/", response_model=schema, status_code=status.HTTP_201_CREATED)
+# --- ENDPOINT PARA CREATE GENERICO ---
+    @router.post(
+            "/", 
+            response_model=schema, 
+            status_code=status.HTTP_201_CREATED
+    )
+
     def create_item(
         *,
         db: Session = Depends(deps.get_db),
         item_in: create_schema,
         current_user: models_user.User = Depends(deps.get_current_active_user)
     ):
-        # Agora chamamos o create do CRUDBase que já sabe lidar com o user_id
-        return crud_instance.create(db=db, obj_in=item_in, user_id=current_user.id)
+        return crud_instance.create(
+            db=db, 
+            obj_in=item_in, 
+            user_id=current_user.id
+        )
 
-    # --- ENDPOINT PARA LER UMA LISTA DE ITENS ---
-    @router.get("/", response_model=List[schema])
+# --- ENDPOINT PARA READ LISTA GENERICA ---
+    @router.get(
+            "/", 
+            response_model=List[schema]
+    )
+
     def read_items(
         db: Session = Depends(deps.get_db),
         skip: int = 0,
         limit: int = 100,
         current_user: models_user.User = Depends(deps.get_current_active_user)
     ):
-        # Para listas, por enquanto, não aplicaremos a regra de "ver apenas o que criou"
-        # para simplificar. Poderíamos adicionar isso no futuro se necessário.
-        return crud_instance.get_multi(db=db, skip=skip, limit=limit)
+        return crud_instance.get_multi(
+            db=db, 
+            skip=skip, 
+            limit=limit
+        )
 
-    # --- ENDPOINT PARA LER UM ITEM ESPECÍFICO ---
-    @router.get("/{item_id}", response_model=schema)
+# --- ENDPOINT PARA READ UM ITEM ESPECÍFICO ---
+    @router.get(
+            "/{item_id}", 
+            response_model=schema
+    )
+
     def read_item(
         *,
         db: Session = Depends(deps.get_db),
         item_id: int,
         current_user: models_user.User = Depends(deps.get_current_active_user)
     ):
-        item = crud_instance.get(db=db, id=item_id)
+        item = crud_instance.get(
+            db=db, 
+            id=item_id
+        )
+
         if not item:
-            raise HTTPException(status_code=404, detail=f"{tags[0]} não encontrado")
+            raise HTTPException(
+                status_code=404, 
+                detail=f"{tags[0]} não encontrado"
+            )
         
-        if current_user.perfil != 'administrativo' and item.id_usuario_criador != current_user.id:
-            raise HTTPException(status_code=403, detail="Você não tem permissão para ver este item")
-        
+        # ensure we compare plain Python values (not SQLAlchemy expression objects)
+        creator_id = getattr(item, "id_usuario_criador", None)
+        if current_user.perfil != 'administrativo' and creator_id != current_user.id:
+            raise HTTPException(
+                status_code=403, 
+                detail="Você não tem permissão para ver este item"
+            )
+
         return item
 
-    # --- ENDPOINT PARA ATUALIZAR UM ITEM ---
-    @router.put("/{item_id}", response_model=schema)
+# --- ENDPOINT PARA ATUALIZAR UM ITEM ---
+    @router.put(
+            "/{item_id}", 
+            response_model=schema
+    )
+
     def update_item(
         *,
         db: Session = Depends(deps.get_db),
         item_id: int,
-        item_in: update_schema,
+        item_in: create_schema,
         current_user: models_user.User = Depends(deps.get_current_active_user)
     ):
-        db_obj = crud_instance.get(db=db, id=item_id)
-        if not db_obj:
-            raise HTTPException(status_code=404, detail=f"{tags[0]} não encontrado")
-        
-        if current_user.perfil != 'administrativo' and db_obj.id_usuario_criador != current_user.id:
-            raise HTTPException(status_code=403, detail="Você não tem permissão para modificar este item")
-            
-        return crud_instance.update(db=db, db_obj=db_obj, obj_in=item_in)
+        db_obj = crud_instance.get(
+            db=db, 
+            id=item_id
+        )
 
-    # Adicionamos um prefixo e tags ao router gerado
+        if not db_obj:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"{tags[0]} não encontrado"
+            )
+        
+        creator_id = getattr(db_obj, "id_usuario_criador", None)
+        if current_user.perfil != 'administrativo' and creator_id != current_user.id:
+            raise HTTPException(
+                status_code=403, 
+                detail="Você não tem permissão para modificar este item"
+            )
+            
+        return crud_instance.update(
+            db=db, 
+            db_obj=db_obj, 
+            obj_in=item_in
+        )
+
+# Adicionado um prefixo e uma tags ao router gerado
     final_router = APIRouter()
-    final_router.include_router(router, prefix=prefix, tags=tags)
+    
+    final_router.include_router(
+        router, 
+        prefix=prefix, 
+        tags=tags
+    )
+
     return final_router
 
 
