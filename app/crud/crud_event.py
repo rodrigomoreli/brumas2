@@ -3,7 +3,12 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models import event as models_event
 from app.models import user as models_user
+from app.models import dimension as models_dimension
+
 from app.schemas import event as schemas_event
+from app.schemas import user as schemas_user
+
+
 from typing import Optional
 
 # ===================================================================
@@ -66,7 +71,18 @@ def get_multi_eventos(
 ) -> list[models_event.Evento]:
     
     # 1. Inicia a consulta base na tabela de eventos
-    query = db.query(models_event.Evento)
+    query = db.query(
+        models_event.Evento,
+        models_dimension.Cliente.nome.label("cliente_nome"),
+        models_dimension.LocalEvento.descricao.label("local_evento_nome"),
+        models_dimension.Buffet.descricao.label("buffet_nome")
+    ).join(
+        models_dimension.Cliente, models_event.Evento.id_cliente == models_dimension.Cliente.id
+    ).join(
+        models_dimension.LocalEvento, models_event.Evento.id_local_evento == models_dimension.LocalEvento.id
+    ).outerjoin(
+        models_dimension.Buffet, models_event.Evento.id_buffet == models_dimension.Buffet.id
+    )
 
     # 2. Aplica o filtro de permissão (A PARTE MAIS IMPORTANTE)
     if current_user.perfil != 'administrativo':
@@ -76,12 +92,18 @@ def get_multi_eventos(
     if id_cliente:
         query = query.filter(models_event.Evento.id_cliente == id_cliente)
     
-    # Adicione outros filtros aqui se necessário no futuro (ex: por cidade, por data, etc.)
-
     # 4. Aplica a paginação
-    eventos = query.offset(skip).limit(limit).all()
-    
-    return eventos
+    results_from_db = query.offset(skip).limit(limit).all()
+
+    # 5. Processa os resultados para adicionar os nomes aos objetos Evento
+    eventos_processados = []
+    for evento_obj, cliente_nome, local_nome, buffet_nome in results_from_db:
+        evento_obj.cliente_nome = cliente_nome
+        evento_obj.local_evento_nome = local_nome
+        evento_obj.buffet_nome = buffet_nome        
+        eventos_processados.append(evento_obj)
+
+    return eventos_processados
 
 # ===================================================================
 #                           CRUD PARA DESPESAS

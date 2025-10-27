@@ -46,7 +46,7 @@ def read_evento(
     return evento
 
 # READ TODOS OS EVENTOS COM BASE EM PERMISSOES, FILTROS E PAGINACAO
-@router.get("/", response_model=list[schemas_event.Evento])
+@router.get("/", response_model=List[schemas_event.EventoPublic])
 def read_eventos(
     db: Session = Depends(deps.get_db),
     skip: int = 0,

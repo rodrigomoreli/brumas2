@@ -63,9 +63,6 @@ class Degustacao(DegustacaoBase):
     id_usuario_criador: int
 
 # ===================================================================
-
-
-# ===================================================================
 # DESPESA
 # ===================================================================
 
@@ -126,3 +123,16 @@ class Evento(EventoBase):
     venda: Optional[Venda] = None
     degustacoes: list[Degustacao] = []
     despesas: list[Despesa] = []
+
+# ===================================================================
+# SCHEMAS PARA O OS CARDS DO FRONT-END
+# ===================================================================
+class EventoPublic(EventoBase):
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    id_usuario_criador: int
+    # Os novos campos que queremos exibir no frontend
+    cliente_nome: str
+    local_evento_nome: str
+    buffet_nome: Optional[str] = None

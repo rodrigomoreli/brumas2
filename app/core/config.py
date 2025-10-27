@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # --- Configurações de CORS (Cross-Origin Resource Sharing) ---
     # Lista de origens que têm permissão para acessar a API.
     # Essencial para conectar um frontend no futuro.
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    BACKEND_CORS_ORIGINS: List[str] = []
 
     class Config:
         # O Pydantic tentará ler as variáveis de um arquivo .env

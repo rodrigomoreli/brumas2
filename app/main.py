@@ -4,6 +4,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.routers import users, login, dimensions, eventos
 
+
+print("--- INICIANDO DEBUG DE CORS ---")
+print(f"Valor de settings.BACKEND_CORS_ORIGINS: {settings.BACKEND_CORS_ORIGINS}")
+print(f"Tipo da variável: {type(settings.BACKEND_CORS_ORIGINS)}")
+print("---------------------------------")
+# ^^^-------------------------------------------^^^
+
+
+
 # Cria a instância principal da aplicação FastAPI
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -11,8 +20,7 @@ app = FastAPI(
 )
 
 # Configuração do CORS (Cross-Origin Resource Sharing)
-# Isso é essencial para permitir que um frontend web (rodando em outro domínio)
-# possa fazer requisições para esta API.
+# Isso é essencial para permitir que um frontend web (rodando em outro domínio) possa fazer requisições para esta API.
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
@@ -31,4 +39,3 @@ app.include_router(eventos.router, prefix=f"{settings.API_V1_STR}/eventos", tags
 @app.get("/")
 def read_root():
     return {"message": f"Bem-vindo à API do {settings.PROJECT_NAME}"}
-
