@@ -96,7 +96,10 @@ class ClienteCreate(BaseModel):
 # A classe de Atualização herda da Base, mantendo todos os campos
 # opcionais para permitir atualizações parciais (PATCH).
 class ClienteUpdate(ClienteBase):
-    pass
+    nome: Optional[str] = None
+    contato_principal: Optional[str] = None
+    telefone: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 # A classe principal (de resposta) representa o objeto completo
 # como ele existe no banco de dados, incluindo campos automáticos.

@@ -97,7 +97,7 @@ def create_crud_router(
         return item
 
 # --- ENDPOINT PARA ATUALIZAR UM ITEM ---
-    @router.put(
+    @router.patch(
             "/{item_id}", 
             response_model=schema
     )
@@ -106,7 +106,7 @@ def create_crud_router(
         *,
         db: Session = Depends(deps.get_db),
         item_id: int,
-        item_in: create_schema,
+        item_in: update_schema,
         current_user: models_user.User = Depends(deps.get_current_active_user)
     ):
         db_obj = crud_instance.get(
@@ -132,6 +132,31 @@ def create_crud_router(
             db_obj=db_obj, 
             obj_in=item_in
         )
+    
+# --- ENDPOINT PARA DELETAR UM ITEM ---
+    @router.delete("/{item_id}", response_model=schema)
+    def delete_item(
+        *,
+        db: Session = Depends(deps.get_db),
+        item_id: int,
+        current_user: models_user.User = Depends(deps.get_current_active_user)
+    ):
+        db_obj = crud_instance.get(db=db, id=item_id)
+        if not db_obj:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"{tags[0]} não encontrado"
+            )
+        
+        creator_id = getattr(db_obj, "id_usuario_criador", None)
+        if current_user.perfil != 'administrativo' and creator_id != current_user.id:
+            raise HTTPException(
+                status_code=403, 
+                detail="Você não tem permissão para deletar este item"
+            )
+        
+        deleted_item = crud_instance.remove(db=db, id=item_id)
+        return deleted_item
 
 # Adicionado um prefixo e uma tags ao router gerado
     final_router = APIRouter()

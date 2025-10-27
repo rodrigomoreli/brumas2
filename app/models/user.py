@@ -24,7 +24,7 @@ class User(Base):
     perfil = Column(SQLAlchemyEnum(UserProfile), nullable=False, default=UserProfile.OPERACIONAL)
     is_active = Column(Boolean(), default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
 # Relacionamentos com outras tabelas    
     assessorias_criadas = relationship("Assessoria", back_populates="usuario_criador", cascade="all, delete-orphan")

@@ -1,4 +1,5 @@
 # app/crud/crud_event.py
+
 from sqlalchemy.orm import Session, joinedload
 
 from app.models import event as models_event
@@ -19,7 +20,6 @@ from typing import Optional
 def get_evento(db: Session, evento_id: int) -> models_event.Evento | None:
 
     return db.query(models_event.Evento).options(
-        joinedload(models_event.Evento.venda),
         joinedload(models_event.Evento.degustacoes),
         joinedload(models_event.Evento.despesas)
     ).filter(models_event.Evento.id == evento_id).first()
@@ -30,32 +30,26 @@ def get_eventos(db: Session, skip: int = 0, limit: int = 100) -> list[models_eve
 
 # CREATE EVENTO COM VENDA ASSOCIADA
 def create_evento(db: Session, *, evento_in: schemas_event.EventoCreate, user_id: int) -> models_event.Evento:
-    # 1. Prepara os dados do evento e da venda a partir do schema de entrada
-    venda_data = evento_in.venda
+    # Prepara os dados do evento a partir do schema de entrada
     evento_data = evento_in.model_dump(exclude={'venda'})
 
-    # 2. Cria o objeto Evento no banco
-    db_evento = models_event.Evento(**evento_data, id_usuario_criador=user_id)
+    # Cria o objeto Evento no banco
+    db_evento = models_event.Evento(
+        **evento_data, 
+        id_usuario_criador=user_id
+    )
     db.add(db_evento)
     db.commit()
     db.refresh(db_evento)
 
-    # 3. Cria o objeto Venda, associando ao ID do evento e ao usuário criador
-    db_venda = models_event.Venda(
-        **venda_data.model_dump(),
-        id_evento=db_evento.id,
-        id_usuario_criador=user_id
-    )
-    db.add(db_venda)
-    db.commit()
-    db.refresh(db_venda)
-    
-    # Recarrega o evento para garantir que o relacionamento 'venda' esteja populado
-    db.refresh(db_evento)
     return db_evento
 
 # DELETE EVENTO
-def delete_evento(db: Session, *, evento_obj: models_event.Evento) -> None:
+def delete_evento(
+        db: Session, 
+        *, 
+        evento_obj: models_event.Evento
+) -> None:
     db.delete(evento_obj)
     db.commit()
     return
@@ -86,11 +80,15 @@ def get_multi_eventos(
 
     # 2. Aplica o filtro de permissão (A PARTE MAIS IMPORTANTE)
     if current_user.perfil != 'administrativo':
-        query = query.filter(models_event.Evento.id_usuario_criador == current_user.id)
+        query = query.filter(
+            models_event.Evento.id_usuario_criador == current_user.id
+        )
 
     # 3. Aplica filtros opcionais
     if id_cliente:
-        query = query.filter(models_event.Evento.id_cliente == id_cliente)
+        query = query.filter(
+            models_event.Evento.id_cliente == id_cliente
+        )
     
     # 4. Aplica a paginação
     results_from_db = query.offset(skip).limit(limit).all()
@@ -110,17 +108,31 @@ def get_multi_eventos(
 # ===================================================================
 
 # CREATE DESPESA
-def add_despesa_to_evento(db: Session, *, evento_id: int, despesa_in: schemas_event.DespesaCreate, user_id: int) -> models_event.Despesa:
+def add_despesa_to_evento(
+        db: Session, 
+        *, 
+        evento_id: int, 
+        despesa_in: schemas_event.DespesaCreate, 
+        user_id: int
+) -> models_event.Despesa:
     despesa_data = despesa_in.model_dump()
-    db_obj = models_event.Despesa(**despesa_data, id_evento=evento_id, id_usuario_criador=user_id)
-    
+    db_obj = models_event.Despesa(
+        **despesa_data, 
+        id_evento=evento_id, 
+        id_usuario_criador=user_id
+    )
+
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
     return db_obj
 
 # UPDATE DESPESA
-def update_despesa(db: Session, *, despesa_obj: models_event.Despesa, despesa_in: schemas_event.DespesaUpdate) -> models_event.Despesa:
+def update_despesa(
+        db: Session, 
+        *, despesa_obj: models_event.Despesa, 
+        despesa_in: schemas_event.DespesaUpdate
+) -> models_event.Despesa:
     # 1. Converte o schema para um dicionário, pegando apenas os campos enviados.
     update_data = despesa_in.model_dump(exclude_unset=True)
 
@@ -136,7 +148,11 @@ def update_despesa(db: Session, *, despesa_obj: models_event.Despesa, despesa_in
     return despesa_obj
 
 # DELETE DESPESA
-def delete_despesa(db: Session, *, despesa_obj: models_event.Despesa) -> None:
+def delete_despesa(
+        db: Session, 
+        *, 
+        despesa_obj: models_event.Despesa
+) -> None:
     db.delete(despesa_obj)
     db.commit()
     return  
@@ -147,17 +163,33 @@ def delete_despesa(db: Session, *, despesa_obj: models_event.Despesa) -> None:
 # ===================================================================
 
 # CREATE DEGUSTAÇÃO
-def add_degustacao_to_evento(db: Session, *, evento_id: int, degustacao_in: schemas_event.DegustacaoCreate, user_id: int) -> models_event.Degustacao:
+def add_degustacao_to_evento(
+        db: Session, 
+        *, 
+        evento_id: int, 
+        degustacao_in: schemas_event.DegustacaoCreate, 
+        user_id: int
+) -> models_event.Degustacao:
     degustacao_data = degustacao_in.model_dump()
-    db_obj = models_event.Degustacao(**degustacao_data, id_evento=evento_id, id_usuario_criador=user_id)
+    db_obj = models_event.Degustacao(
+        **degustacao_data, 
+        id_evento=evento_id, 
+        id_usuario_criador=user_id
+    )
     
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
+    
     return db_obj
 
 # UPDATE DEGUSTAÇÃO
-def update_degustacao(db: Session, *, degustacao_obj: models_event.Degustacao, degustacao_in: schemas_event.DegustacaoUpdate) -> models_event.Degustacao:
+def update_degustacao(
+        db: Session, 
+        *, 
+        degustacao_obj: models_event.Degustacao, 
+        degustacao_in: schemas_event.DegustacaoUpdate
+) -> models_event.Degustacao:
     # Converte o schema Pydantic para um dicionário.
     # exclude_unset=True é crucial: ele garante que apenas os campos que o usuário
     # realmente enviou na requisição serão incluídos no dicionário.
@@ -176,7 +208,12 @@ def update_degustacao(db: Session, *, degustacao_obj: models_event.Degustacao, d
     return degustacao_obj
 
 # DELETE DEGUSTAÇÃO
-def delete_degustacao(db: Session, *, degustacao_obj: models_event.Degustacao) -> None:
+def delete_degustacao(
+        db: Session, 
+        *, 
+        degustacao_obj: models_event.Degustacao
+) -> None:
     db.delete(degustacao_obj)
     db.commit()
+    
     return

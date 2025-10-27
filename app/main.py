@@ -4,15 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.routers import users, login, dimensions, eventos
 
-
-print("--- INICIANDO DEBUG DE CORS ---")
-print(f"Valor de settings.BACKEND_CORS_ORIGINS: {settings.BACKEND_CORS_ORIGINS}")
-print(f"Tipo da variável: {type(settings.BACKEND_CORS_ORIGINS)}")
-print("---------------------------------")
-# ^^^-------------------------------------------^^^
-
-
-
 # Cria a instância principal da aplicação FastAPI
 app = FastAPI(
     title=settings.PROJECT_NAME,

@@ -35,29 +35,16 @@ class Evento(Base):
     id_assessoria = Column(Integer, ForeignKey("dim_assessorias.id"), nullable=True)
     id_buffet = Column(Integer, ForeignKey("dim_buffets.id"), nullable=True)
     id_usuario_criador = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    vlr_unitario_por_convidado = Column(Numeric(10, 2), nullable=True)
+    vlr_total_contrato = Column(Numeric(10, 2), nullable=True)
+    data_venda = Column(DateTime, nullable=True)
+    observacoes_venda = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-
-    venda = relationship("Venda", back_populates="evento", uselist=False, cascade="all, delete-orphan")
+    # Relacionamentos
     degustacoes = relationship("Degustacao", back_populates="evento", cascade="all, delete-orphan")
     despesas = relationship("Despesa", back_populates="evento", cascade="all, delete-orphan")
-
-class Venda(Base):
-    __tablename__ = "vendas"
-    id = Column(Integer, primary_key=True, index=True)
-    vlr_unitario_por_convidado = Column(Numeric(10, 2))
-    vlr_total_contrato = Column(Numeric(10, 2), nullable=False)
-    data_venda = Column(Date, nullable=False)
-    observacoes = Column(Text)
-    
-    id_evento = Column(Integer, ForeignKey("eventos.id"), nullable=False, unique=True)
-    id_usuario_criador = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    evento = relationship("Evento", back_populates="venda")
 
 class Degustacao(Base):
     __tablename__ = "degustacoes"
@@ -67,12 +54,13 @@ class Degustacao(Base):
     vlr_degustacao = Column(Numeric(10, 2))
     feedback_cliente = Column(Text)
 
+    # Chaves Estrangeiras
     id_evento = Column(Integer, ForeignKey("eventos.id"), nullable=False)
     id_usuario_criador = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    # Relacionamentos
     evento = relationship("Evento", back_populates="degustacoes")
 
 class Despesa(Base):
@@ -83,11 +71,12 @@ class Despesa(Base):
     vlr_total_pago = Column(Numeric(10, 2), nullable=False)
     data_despesa = Column(Date, nullable=False)
 
+    # Chaves Estrangeiras
     id_evento = Column(Integer, ForeignKey("eventos.id"), nullable=False)
     id_insumo = Column(Integer, ForeignKey("dim_insumos.id"), nullable=False)
     id_usuario_criador = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    # Relacionamentos
     evento = relationship("Evento", back_populates="despesas")

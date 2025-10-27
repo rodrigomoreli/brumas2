@@ -1,11 +1,12 @@
 # app/schemas/event.py
+
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 # ===================================================================
-# SCHEMAS PARA DIMENSÕES RELACIONADAS A EVENTOS
+# SCHEMAS PARA INSUMOS
 # ===================================================================
 
 class InsumoBase(BaseModel):
@@ -25,24 +26,7 @@ class Insumo(InsumoBase):
     id: int
 
 # ===================================================================
-# SCHEMAS PARA FATOS RELACIONADOS A EVENTOS
-# ===================================================================
-
-class VendaBase(BaseModel):
-    vlr_unitario_por_convidado: Optional[Decimal] = None
-    vlr_total_contrato: Decimal
-    data_venda: date
-    observacoes: Optional[str] = None
-
-class VendaCreate(VendaBase):
-    pass
-
-class Venda(VendaBase):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    id_evento: int
-    id_usuario_criador: int
-
+# SCHEMAS PARA DEGUSTACAO
 # ===================================================================
 
 class DegustacaoBase(BaseModel):
@@ -63,7 +47,7 @@ class Degustacao(DegustacaoBase):
     id_usuario_criador: int
 
 # ===================================================================
-# DESPESA
+# SCHEMAS PARA DESPESA
 # ===================================================================
 
 # A classe Base define todos os campos que podem ser enviados pelo usuário
@@ -95,9 +79,6 @@ class Despesa(DespesaBase):
     data_despesa: Optional[date] = None
 
 # ===================================================================
-
-
-# ===================================================================
 # SCHEMAS PARA A TABELA CENTRAL DE EVENTOS
 # ===================================================================
 
@@ -108,21 +89,42 @@ class EventoBase(BaseModel):
     id_cidade: Optional[int] = None
     id_assessoria: Optional[int] = None
     id_buffet: Optional[int] = None
-    data_evento: date
+    data_evento: Optional[date] = None
     horas_festa: Optional[Decimal] = None
     qtde_convidados_prevista: Optional[int] = None
     status_evento: Optional[str] = 'Orçamento'
+    vlr_unitario_por_convidado: Optional[Decimal] = None
+    vlr_total_contrato: Optional[Decimal] = None
+    data_venda: Optional[datetime] = None
+    observacoes_venda: Optional[str] = None
 
 class EventoCreate(EventoBase):
-    venda: VendaCreate
+    pass
+
+class EventoUpdate(EventoBase):
+    id_cliente: Optional[int] = None
+    id_local_evento: Optional[int] = None
+    id_tipo_evento: Optional[int] = None
+    id_cidade: Optional[int] = None
+    id_assessoria: Optional[int] = None
+    id_buffet: Optional[int] = None
+    data_evento: Optional[date] = None
+    horas_festa: Optional[Decimal] = None
+    qtde_convidados_prevista: Optional[int] = None
+    status_evento: Optional[str] = None
+    vlr_unitario_por_convidado: Optional[Decimal] = None
+    vlr_total_contrato: Optional[Decimal] = None
+    data_venda: Optional[datetime] = None
+    observacoes_venda: Optional[str] = None
 
 class Evento(EventoBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     id_usuario_criador: int
-    venda: Optional[Venda] = None
     degustacoes: list[Degustacao] = []
     despesas: list[Despesa] = []
+    created_at: datetime
+    updated_at: datetime
 
 # ===================================================================
 # SCHEMAS PARA O OS CARDS DO FRONT-END

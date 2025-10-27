@@ -18,7 +18,7 @@ class Assessoria(Base):
     id_usuario_criador = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     usuario_criador = relationship("User", back_populates="assessorias_criadas")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 # Modelo de Dimensão para Buffets
 class Buffet(Base):
@@ -30,7 +30,7 @@ class Buffet(Base):
     id_usuario_criador = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     usuario_criador = relationship("User", back_populates="buffets_criados")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 # Modelo de Dimensão para Cidades
 class Cidade(Base):
@@ -41,7 +41,7 @@ class Cidade(Base):
     id_usuario_criador = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     usuario_criador = relationship("User", back_populates="cidades_criadas") 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now()) # Corrigido para ter apenas onupdate
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 # Modelo de Dimensão para Clientes
 class Cliente(Base):
@@ -54,7 +54,7 @@ class Cliente(Base):
     id_usuario_criador = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     usuario_criador = relationship("User", back_populates="clientes_criados")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 # Modelo de Dimensão para Unidades de Medida de Insumos
 class UnidadeMedida(str, enum.Enum):
@@ -73,7 +73,7 @@ class Insumo(Base):
     id_usuario_criador = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     usuario_criador = relationship("User", back_populates="insumos_criados")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 # Modelo de Dimensão para Locais de Evento
 class LocalEvento(Base):
@@ -85,7 +85,7 @@ class LocalEvento(Base):
     id_usuario_criador = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     usuario_criador = relationship("User", back_populates="locais_evento_criados") 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 # Modelo de Dimensão para Tipos de Evento
 class TipoEvento(Base):
@@ -95,13 +95,4 @@ class TipoEvento(Base):
     id_usuario_criador = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     usuario_criador = relationship("User", back_populates="tipos_evento_criados") 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-# Modelo de Dimensão para Produtos/Serviços
-class ProdutoServico(Base):
-    __tablename__ = "dim_produtos_servicos"
-    id = Column(Integer, primary_key=True, index=True)
-    descricao = Column(String, index=True, nullable=False)
-    categoria = Column(String)
-    vlr_referencia = Column(Numeric(10, 2))
-
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
