@@ -1,17 +1,101 @@
-# app/crud/crud_event.py
-
 """
 Operações CRUD para eventos, despesas e degustações.
-
 Define funções para manipulação de dados relacionados a eventos e suas
 entidades associadas, utilizando SQLAlchemy e os schemas da aplicação.
 """
 
 from sqlalchemy.orm import Session, joinedload
+from fastapi import HTTPException, status
 from app.models import event as models_event
 from app.models import user as models_user
+from app.models import dimension as models_dimension
 from app.schemas import event as schemas_event
 from typing import Optional
+
+
+# Validar relacionamentos
+def validate_evento_relationships(db: Session, evento_data: dict) -> None:
+    """
+    Valida se todos os IDs de relacionamentos existem no banco.
+    Levanta HTTPException se algum ID for inválido.
+    """
+    # Validar cliente (obrigatório)
+    if "id_cliente" in evento_data and evento_data["id_cliente"]:
+        cliente = (
+            db.query(models_dimension.Cliente)
+            .filter(models_dimension.Cliente.id == evento_data["id_cliente"])
+            .first()
+        )
+        if not cliente:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Cliente com id {evento_data['id_cliente']} não encontrado.",
+            )
+
+    # Validar local_evento (obrigatório)
+    if "id_local_evento" in evento_data and evento_data["id_local_evento"]:
+        local = (
+            db.query(models_dimension.LocalEvento)
+            .filter(models_dimension.LocalEvento.id == evento_data["id_local_evento"])
+            .first()
+        )
+        if not local:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Local de evento com id {evento_data['id_local_evento']} não encontrado.",
+            )
+
+    # Validar tipo_evento (opcional)
+    if "id_tipo_evento" in evento_data and evento_data["id_tipo_evento"]:
+        tipo = (
+            db.query(models_dimension.TipoEvento)
+            .filter(models_dimension.TipoEvento.id == evento_data["id_tipo_evento"])
+            .first()
+        )
+        if not tipo:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Tipo de evento com id {evento_data['id_tipo_evento']} não encontrado.",
+            )
+
+    # Validar cidade (opcional)
+    if "id_cidade" in evento_data and evento_data["id_cidade"]:
+        cidade = (
+            db.query(models_dimension.Cidade)
+            .filter(models_dimension.Cidade.id == evento_data["id_cidade"])
+            .first()
+        )
+        if not cidade:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Cidade com id {evento_data['id_cidade']} não encontrada.",
+            )
+
+    # Validar assessoria (opcional)
+    if "id_assessoria" in evento_data and evento_data["id_assessoria"]:
+        assessoria = (
+            db.query(models_dimension.Assessoria)
+            .filter(models_dimension.Assessoria.id == evento_data["id_assessoria"])
+            .first()
+        )
+        if not assessoria:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Assessoria com id {evento_data['id_assessoria']} não encontrada.",
+            )
+
+    # Validar buffet (opcional)
+    if "id_buffet" in evento_data and evento_data["id_buffet"]:
+        buffet = (
+            db.query(models_dimension.Buffet)
+            .filter(models_dimension.Buffet.id == evento_data["id_buffet"])
+            .first()
+        )
+        if not buffet:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Buffet com id {evento_data['id_buffet']} não encontrado.",
+            )
 
 
 def get_evento(db: Session, evento_id: int) -> models_event.Evento | None:
@@ -25,6 +109,7 @@ def get_evento(db: Session, evento_id: int) -> models_event.Evento | None:
             joinedload(models_event.Evento.tipo_evento),
             joinedload(models_event.Evento.cidade),
             joinedload(models_event.Evento.assessoria),
+            joinedload(models_event.Evento.usuario_criador),
             joinedload(models_event.Evento.degustacoes),
             joinedload(models_event.Evento.despesas),
         )
@@ -64,13 +149,37 @@ def create_evento(
     user_id: int,
 ) -> models_event.Evento:
     """Cria um novo evento associado ao usuário criador."""
-    evento_data = evento_in.model_dump(exclude={"venda"})
-    db_evento = models_event.Evento(**evento_data, id_usuario_criador=user_id)
+    evento_data = evento_in.model_dump()
 
+    # ✅ Validar relacionamentos antes de criar
+    validate_evento_relationships(db, evento_data)
+
+    db_evento = models_event.Evento(**evento_data, id_usuario_criador=user_id)
     db.add(db_evento)
     db.commit()
     db.refresh(db_evento)
     return db_evento
+
+
+def update_evento(
+    db: Session,
+    *,
+    evento_obj: models_event.Evento,
+    evento_in: schemas_event.EventoUpdate,
+) -> models_event.Evento:
+    """Atualiza os dados de um evento existente."""
+    update_data = evento_in.model_dump(exclude_unset=True)
+
+    # ✅ Validar relacionamentos antes de atualizar
+    validate_evento_relationships(db, update_data)
+
+    for field, value in update_data.items():
+        setattr(evento_obj, field, value)
+
+    db.add(evento_obj)
+    db.commit()
+    db.refresh(evento_obj)
+    return evento_obj
 
 
 def delete_evento(
@@ -92,12 +201,24 @@ def add_despesa_to_evento(
 ) -> models_event.Despesa:
     """Adiciona uma despesa a um evento."""
     despesa_data = despesa_in.model_dump()
+
+    # ✅ Validar se o insumo existe
+    insumo = (
+        db.query(models_dimension.Insumo)
+        .filter(models_dimension.Insumo.id == despesa_data["id_insumo"])
+        .first()
+    )
+    if not insumo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Insumo com id {despesa_data['id_insumo']} não encontrado.",
+        )
+
     db_obj = models_event.Despesa(
         **despesa_data,
         id_evento=evento_id,
         id_usuario_criador=user_id,
     )
-
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
@@ -112,6 +233,19 @@ def update_despesa(
 ) -> models_event.Despesa:
     """Atualiza os dados de uma despesa."""
     update_data = despesa_in.model_dump(exclude_unset=True)
+
+    # ✅ Validar se o insumo existe (se estiver sendo atualizado)
+    if "id_insumo" in update_data and update_data["id_insumo"]:
+        insumo = (
+            db.query(models_dimension.Insumo)
+            .filter(models_dimension.Insumo.id == update_data["id_insumo"])
+            .first()
+        )
+        if not insumo:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Insumo com id {update_data['id_insumo']} não encontrado.",
+            )
 
     for field, value in update_data.items():
         setattr(despesa_obj, field, value)
@@ -146,7 +280,6 @@ def add_degustacao_to_evento(
         id_evento=evento_id,
         id_usuario_criador=user_id,
     )
-
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)

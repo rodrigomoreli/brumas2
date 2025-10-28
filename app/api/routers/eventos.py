@@ -1,12 +1,9 @@
 # app/api/routers/eventos.py
-
 """
 Rotas da API para gerenciamento de eventos, despesas e degustações.
-
 Todas as operações são restritas a usuários com perfil operacional
 ou administrativo.
 """
-
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -43,6 +40,7 @@ def read_evento(
     evento = crud_event.get_evento(db=db, evento_id=evento_id)
     if not evento:
         raise HTTPException(status_code=404, detail="Evento não encontrado")
+
     if (
         current_user.perfil != "administrativo"
         and evento.id_usuario_criador != current_user.id
@@ -50,6 +48,7 @@ def read_evento(
         raise HTTPException(
             status_code=403, detail="Você não tem permissão para ver este evento"
         )
+
     return evento
 
 
@@ -71,6 +70,32 @@ def read_eventos(
     )
 
 
+@router.patch("/{evento_id}", response_model=schemas_event.Evento)
+def update_evento(
+    *,
+    db: Session = Depends(deps.get_db),
+    evento_id: int,
+    evento_in: schemas_event.EventoUpdate,
+    current_user: models_user.User = Depends(deps.get_current_active_operational_user),
+):
+    """Atualiza os dados de um evento existente."""
+    evento = crud_event.get_evento(db=db, evento_id=evento_id)
+    if not evento:
+        raise HTTPException(
+            status_code=404, detail=f"Evento com id {evento_id} não encontrado."
+        )
+
+    if (
+        current_user.perfil != "administrativo"
+        and evento.id_usuario_criador != current_user.id
+    ):
+        raise HTTPException(
+            status_code=403, detail="Você não tem permissão para modificar este evento"
+        )
+
+    return crud_event.update_evento(db=db, evento_obj=evento, evento_in=evento_in)
+
+
 @router.delete("/{evento_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_evento(
     *,
@@ -84,6 +109,7 @@ def delete_evento(
         raise HTTPException(
             status_code=404, detail=f"Evento com id {evento_id} não encontrado."
         )
+
     if (
         current_user.perfil != "administrativo"
         and evento.id_usuario_criador != current_user.id
@@ -91,6 +117,7 @@ def delete_evento(
         raise HTTPException(
             status_code=403, detail="Você não tem permissão para deletar este evento"
         )
+
     crud_event.delete_evento(db=db, evento_obj=evento)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -111,6 +138,7 @@ def add_despesa_evento(
     evento = crud_event.get_evento(db=db, evento_id=evento_id)
     if not evento:
         raise HTTPException(status_code=404, detail="Evento não encontrado")
+
     if (
         current_user.perfil != "administrativo"
         and evento.id_usuario_criador != current_user.id
@@ -118,12 +146,15 @@ def add_despesa_evento(
         raise HTTPException(
             status_code=403, detail="Você não tem permissão para modificar este evento"
         )
+
     return crud_event.add_despesa_to_evento(
         db=db, evento_id=evento_id, despesa_in=despesa_in, user_id=current_user.id
     )
 
 
-@router.put("/{evento_id}/despesas/{despesa_id}", response_model=schemas_event.Despesa)
+@router.patch(
+    "/{evento_id}/despesas/{despesa_id}", response_model=schemas_event.Despesa
+)
 def update_despesa_for_evento(
     *,
     db: Session = Depends(deps.get_db),
@@ -138,6 +169,7 @@ def update_despesa_for_evento(
         raise HTTPException(
             status_code=404, detail=f"Evento com id {evento_id} não encontrado."
         )
+
     if (
         current_user.perfil != "administrativo"
         and evento.id_usuario_criador != current_user.id
@@ -152,6 +184,7 @@ def update_despesa_for_evento(
             status_code=404,
             detail=f"Despesa com id {despesa_id} não encontrada neste evento.",
         )
+
     return crud_event.update_despesa(
         db=db, despesa_obj=despesa_obj, despesa_in=despesa_in
     )
@@ -173,6 +206,7 @@ def delete_despesa_for_evento(
         raise HTTPException(
             status_code=404, detail=f"Evento com id {evento_id} não encontrado."
         )
+
     if (
         current_user.perfil != "administrativo"
         and evento.id_usuario_criador != current_user.id
@@ -187,6 +221,7 @@ def delete_despesa_for_evento(
             status_code=404,
             detail=f"Despesa com id {despesa_id} não encontrada neste evento.",
         )
+
     crud_event.delete_despesa(db=db, despesa_obj=despesa_obj)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -207,6 +242,7 @@ def add_degustacao_evento(
     evento = crud_event.get_evento(db=db, evento_id=evento_id)
     if not evento:
         raise HTTPException(status_code=404, detail="Evento não encontrado")
+
     if (
         current_user.perfil != "administrativo"
         and evento.id_usuario_criador != current_user.id
@@ -214,12 +250,13 @@ def add_degustacao_evento(
         raise HTTPException(
             status_code=403, detail="Você não tem permissão para modificar este evento"
         )
+
     return crud_event.add_degustacao_to_evento(
         db=db, evento_id=evento_id, degustacao_in=degustacao_in, user_id=current_user.id
     )
 
 
-@router.put(
+@router.patch(
     "/{evento_id}/degustacoes/{degustacao_id}", response_model=schemas_event.Degustacao
 )
 def update_degustacao_for_evento(
@@ -237,6 +274,14 @@ def update_degustacao_for_evento(
             status_code=404, detail=f"Evento com id {evento_id} não encontrado."
         )
 
+    if (
+        current_user.perfil != "administrativo"
+        and evento.id_usuario_criador != current_user.id
+    ):
+        raise HTTPException(
+            status_code=403, detail="Você não tem permissão para modificar este evento"
+        )
+
     degustacao_obj = next(
         (d for d in evento.degustacoes if d.id == degustacao_id), None
     )
@@ -245,6 +290,7 @@ def update_degustacao_for_evento(
             status_code=404,
             detail=f"Degustação com id {degustacao_id} não encontrada neste evento.",
         )
+
     return crud_event.update_degustacao(
         db=db, degustacao_obj=degustacao_obj, degustacao_in=degustacao_in
     )
@@ -260,6 +306,7 @@ def delete_degustacao_for_evento(
     degustacao_id: int,
     current_user: models_user.User = Depends(deps.get_current_active_operational_user),
 ):
+    """Remove uma degustação de um evento."""
     evento = crud_event.get_evento(db=db, evento_id=evento_id)
     if not evento:
         raise HTTPException(
@@ -280,7 +327,6 @@ def delete_degustacao_for_evento(
         (d for d in evento.degustacoes if d.id == degustacao_id),
         None,
     )
-
     if not degustacao_obj:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

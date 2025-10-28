@@ -1,8 +1,5 @@
-# app/schemas/dimension.py
-
 """
 Schemas Pydantic para entidades dimensionais.
-
 Define os modelos utilizados pela API para criação, atualização e
 retorno de dados relacionados a assessorias, buffets, cidades,
 clientes, insumos, locais e tipos de evento.
@@ -11,12 +8,11 @@ clientes, insumos, locais e tipos de evento.
 from pydantic import BaseModel, ConfigDict, EmailStr
 from datetime import datetime
 from typing import Optional
+from decimal import Decimal
 import enum
 
 
 # Assessoria
-
-
 class AssessoriaBase(BaseModel):
     descricao: Optional[str] = None
     contato: Optional[str] = None
@@ -24,7 +20,7 @@ class AssessoriaBase(BaseModel):
 
 
 class AssessoriaCreate(AssessoriaBase):
-    descricao: Optional[str] = None
+    descricao: str  # Obrigatório na criação
 
 
 class AssessoriaUpdate(AssessoriaBase):
@@ -40,8 +36,6 @@ class Assessoria(AssessoriaBase):
 
 
 # Buffet
-
-
 class BuffetBase(BaseModel):
     descricao: Optional[str] = None
     contato: Optional[str] = None
@@ -49,7 +43,7 @@ class BuffetBase(BaseModel):
 
 
 class BuffetCreate(BuffetBase):
-    descricao: Optional[str] = None
+    descricao: str  # Obrigatório na criação
 
 
 class BuffetUpdate(BuffetBase):
@@ -65,16 +59,14 @@ class Buffet(BuffetBase):
 
 
 # Cidade
-
-
 class CidadeBase(BaseModel):
     nome: Optional[str] = None
     estado: Optional[str] = None
 
 
 class CidadeCreate(CidadeBase):
-    nome: Optional[str] = None
-    estado: Optional[str] = None
+    nome: str  # Obrigatório na criação
+    estado: str  # Obrigatório na criação
 
 
 class CidadeUpdate(CidadeBase):
@@ -90,8 +82,6 @@ class Cidade(CidadeBase):
 
 
 # Cliente
-
-
 class ClienteBase(BaseModel):
     nome: Optional[str] = None
     contato_principal: Optional[str] = None
@@ -120,8 +110,6 @@ class Cliente(ClienteBase):
 
 
 # Insumo
-
-
 class UnidadeMedida(str, enum.Enum):
     KG = "KG"
     UNIDADE = "Unidade"
@@ -130,12 +118,14 @@ class UnidadeMedida(str, enum.Enum):
 
 class InsumoBase(BaseModel):
     descricao: Optional[str] = None
+    tipo_insumo: Optional[str] = None
     unidade_medida: Optional[UnidadeMedida] = None
+    vlr_referencia: Optional[Decimal] = None
 
 
 class InsumoCreate(InsumoBase):
-    descricao: Optional[str] = None
-    unidade_medida: Optional[UnidadeMedida] = None
+    descricao: str
+    unidade_medida: UnidadeMedida
 
 
 class InsumoUpdate(InsumoBase):
@@ -151,8 +141,6 @@ class Insumo(InsumoBase):
 
 
 # LocalEvento
-
-
 class LocalEventoBase(BaseModel):
     descricao: Optional[str] = None
     endereco: Optional[str] = None
@@ -160,8 +148,7 @@ class LocalEventoBase(BaseModel):
 
 
 class LocalEventoCreate(LocalEventoBase):
-    descricao: Optional[str] = None
-    updated_at: Optional[datetime] = None
+    descricao: str
 
 
 class LocalEventoUpdate(LocalEventoBase):
@@ -177,14 +164,12 @@ class LocalEvento(LocalEventoBase):
 
 
 # TipoEvento
-
-
 class TipoEventoBase(BaseModel):
     descricao: Optional[str] = None
 
 
 class TipoEventoCreate(TipoEventoBase):
-    descricao: Optional[str] = None
+    descricao: str
 
 
 class TipoEventoUpdate(TipoEventoBase):
