@@ -84,10 +84,10 @@ class CRUDTipoEvento(
 
 
 # Instâncias para uso direto nos endpoints
-assessoria = CRUDAssessoria(models.Assessoria)
-buffet = CRUDBuffet(models.Buffet)
-cidade = CRUDCidade(models.Cidade)
-cliente = CRUDCliente(models.Cliente)
-insumo = CRUDInsumo(models.Insumo)
-local_evento = CRUDLocalEvento(models.LocalEvento)
-tipo_evento = CRUDTipoEvento(models.TipoEvento)
+crud_assessoria = CRUDAssessoria(models.Assessoria)
+crud_buffet = CRUDBuffet(models.Buffet)
+crud_cidade = CRUDCidade(models.Cidade)
+crud_cliente = CRUDCliente(models.Cliente)
+crud_insumo = CRUDInsumo(models.Insumo)
+crud_local_evento = CRUDLocalEvento(models.LocalEvento)
+crud_tipo_evento = CRUDTipoEvento(models.TipoEvento)
