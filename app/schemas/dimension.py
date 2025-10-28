@@ -1,28 +1,35 @@
 # app/schemas/dimension.py
-# COMO CRIAR, ATUALIZAR E RETORNAR OBJETOS DE DIMENSÃO
 
-from pydantic import BaseModel
-from pydantic import ConfigDict
+"""
+Schemas Pydantic para entidades dimensionais.
+
+Define os modelos utilizados pela API para criação, atualização e
+retorno de dados relacionados a assessorias, buffets, cidades,
+clientes, insumos, locais e tipos de evento.
+"""
+
+from pydantic import BaseModel, ConfigDict, EmailStr
 from datetime import datetime
 from typing import Optional
-from decimal import Decimal
 import enum
-from pydantic import EmailStr
 
-# ===================================================================
-# --- Assessoria ---
-# ===================================================================
+
+# Assessoria
+
 
 class AssessoriaBase(BaseModel):
     descricao: Optional[str] = None
     contato: Optional[str] = None
     telefone: Optional[str] = None
 
+
 class AssessoriaCreate(AssessoriaBase):
     descricao: Optional[str] = None
 
-class AssessoriaUpdate(AssessoriaBase): 
+
+class AssessoriaUpdate(AssessoriaBase):
     pass
+
 
 class Assessoria(AssessoriaBase):
     model_config = ConfigDict(from_attributes=True)
@@ -31,20 +38,23 @@ class Assessoria(AssessoriaBase):
     created_at: datetime
     updated_at: datetime
 
-# ===================================================================
-# --- Buffet ---
-# ===================================================================
+
+# Buffet
+
 
 class BuffetBase(BaseModel):
     descricao: Optional[str] = None
     contato: Optional[str] = None
     telefone: Optional[str] = None
 
+
 class BuffetCreate(BuffetBase):
     descricao: Optional[str] = None
 
+
 class BuffetUpdate(BuffetBase):
     pass
+
 
 class Buffet(BuffetBase):
     model_config = ConfigDict(from_attributes=True)
@@ -53,20 +63,23 @@ class Buffet(BuffetBase):
     created_at: datetime
     updated_at: datetime
 
-# ===================================================================
-# --- Cidade ---
-# ===================================================================
+
+# Cidade
+
 
 class CidadeBase(BaseModel):
     nome: Optional[str] = None
     estado: Optional[str] = None
 
+
 class CidadeCreate(CidadeBase):
     nome: Optional[str] = None
     estado: Optional[str] = None
 
+
 class CidadeUpdate(CidadeBase):
     pass
+
 
 class Cidade(CidadeBase):
     model_config = ConfigDict(from_attributes=True)
@@ -75,34 +88,29 @@ class Cidade(CidadeBase):
     created_at: datetime
     updated_at: datetime
 
-# ===================================================================
-# --- Cliente ---
-# ===================================================================
 
-# A classe Base reflete os campos que podem ser enviados pelo usuário
-# Todos são opcionais para máxima flexibilidade
+# Cliente
+
+
 class ClienteBase(BaseModel):
     nome: Optional[str] = None
     contato_principal: Optional[str] = None
     telefone: Optional[str] = None
     email: Optional[EmailStr] = None
 
-# A classe de Criação herda da Base e define quais campos são
-# obrigatórios ao criar um novo cliente.
+
 class ClienteCreate(BaseModel):
     nome: str
     email: EmailStr
 
-# A classe de Atualização herda da Base, mantendo todos os campos
-# opcionais para permitir atualizações parciais (PATCH).
+
 class ClienteUpdate(ClienteBase):
     nome: Optional[str] = None
     contato_principal: Optional[str] = None
     telefone: Optional[str] = None
     email: Optional[EmailStr] = None
 
-# A classe principal (de resposta) representa o objeto completo
-# como ele existe no banco de dados, incluindo campos automáticos.
+
 class Cliente(ClienteBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -110,25 +118,29 @@ class Cliente(ClienteBase):
     created_at: datetime
     updated_at: datetime
 
-# ===================================================================
-# --- Insumo ---
-# ===================================================================
+
+# Insumo
+
 
 class UnidadeMedida(str, enum.Enum):
     KG = "KG"
     UNIDADE = "Unidade"
     LITRO = "Litro"
 
+
 class InsumoBase(BaseModel):
     descricao: Optional[str] = None
     unidade_medida: Optional[UnidadeMedida] = None
+
 
 class InsumoCreate(InsumoBase):
     descricao: Optional[str] = None
     unidade_medida: Optional[UnidadeMedida] = None
 
+
 class InsumoUpdate(InsumoBase):
     pass
+
 
 class Insumo(InsumoBase):
     model_config = ConfigDict(from_attributes=True)
@@ -137,21 +149,24 @@ class Insumo(InsumoBase):
     created_at: datetime
     updated_at: datetime
 
-# ===================================================================
-# --- LocalEvento ---
-# ===================================================================
+
+# LocalEvento
+
 
 class LocalEventoBase(BaseModel):
     descricao: Optional[str] = None
     endereco: Optional[str] = None
     capacidade_maxima: Optional[int] = None
 
+
 class LocalEventoCreate(LocalEventoBase):
     descricao: Optional[str] = None
     updated_at: Optional[datetime] = None
 
+
 class LocalEventoUpdate(LocalEventoBase):
     pass
+
 
 class LocalEvento(LocalEventoBase):
     model_config = ConfigDict(from_attributes=True)
@@ -161,18 +176,20 @@ class LocalEvento(LocalEventoBase):
     updated_at: datetime
 
 
-# ===================================================================
-# --- TipoEvento ---
-# ===================================================================
+# TipoEvento
+
 
 class TipoEventoBase(BaseModel):
     descricao: Optional[str] = None
 
+
 class TipoEventoCreate(TipoEventoBase):
     descricao: Optional[str] = None
 
+
 class TipoEventoUpdate(TipoEventoBase):
     pass
+
 
 class TipoEvento(TipoEventoBase):
     model_config = ConfigDict(from_attributes=True)

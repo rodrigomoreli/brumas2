@@ -1,33 +1,54 @@
 # app/schemas/user.py
+
+"""
+Schemas Pydantic para usuários.
+
+Define os modelos de entrada e saída utilizados pela API para operações
+relacionadas a usuários, como criação, atualização e leitura.
+"""
+
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from app.models.user import UserProfile
 
-# Propriedades compartilhadas por todos os schemas de usuário
+
 class UserBase(BaseModel):
+    """
+    Propriedades comuns a todos os schemas de usuário.
+    """
+
     email: EmailStr
     username: str
     nome_completo: Optional[str] = None
     is_active: Optional[bool] = True
     perfil: Optional[UserProfile] = UserProfile.OPERACIONAL
 
-# Schema para a criação de um usuário (recebido pela API)
-# Herda de UserBase e adiciona o campo de senha
+
 class UserCreate(UserBase):
+    """
+    Schema para criação de usuário (entrada via API).
+    """
+
     password: str
 
-# Schema para a atualização de um usuário (recebido pela API)
-# Todos os campos são opcionais
+
 class UserUpdate(BaseModel):
+    """
+    Schema para atualização parcial de usuário (entrada via API).
+    """
+
     email: Optional[EmailStr] = None
     nome_completo: Optional[str] = None
     is_active: Optional[bool] = None
     perfil: Optional[UserProfile] = None
 
-# Schema para a resposta da API (enviado pela API)
-# Não inclui o campo 'hashed_password' por segurança
+
 class User(UserBase):
+    """
+    Schema de retorno de usuário (saída da API).
+    """
+
     id: int
 
     class Config:
-        from_attributes = True # Permite que o Pydantic leia dados de objetos SQLAlchemy
+        from_attributes = True
