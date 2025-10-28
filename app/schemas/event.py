@@ -138,3 +138,19 @@ class EventoPublic(EventoBase):
     cliente_nome: str
     local_evento_nome: str
     buffet_nome: Optional[str] = None
+
+# ===================================================================
+# SCHEMA PARA A TELA DE DETALHES DO FRONT-END
+# ===================================================================
+class EventoDetail(Evento): # Herda de 'Evento', que já tem os campos base e as listas!
+    model_config = ConfigDict(from_attributes=True)
+
+    # Adicionamos TODOS os campos de nome que queremos na tela de detalhes
+    cliente_nome: Optional[str] = None
+    local_evento_nome: Optional[str] = None
+    tipo_evento_nome: Optional[str] = None
+    cidade_nome: Optional[str] = None
+    assessoria_nome: Optional[str] = None
+    buffet_nome: Optional[str] = None
+    id_usuario_criador_nome: Optional[str] = None
+    

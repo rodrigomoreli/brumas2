@@ -4,14 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
+# Importações do seu projeto
 from app.api import deps
 from app.crud import crud_event
 from app.schemas import event as schemas_event
 from app.models import user as models_user
 
-
 router = APIRouter()
-
 
 # =============================================================================================================
 #                           ROTA EVENTO
@@ -29,21 +28,25 @@ def create_evento(
     return evento
 
 # READ EVENTO POR ID
-@router.get("/{evento_id}", response_model=schemas_event.Evento)
+@router.get("/{evento_id}/", response_model=schemas_event.EventoDetail) # <<< A MUDANÇA ESTÁ AQUI
 def read_evento(
     *,
     db: Session = Depends(deps.get_db),
     evento_id: int,
     current_user: models_user.User = Depends(deps.get_current_active_operational_user)
 ):
+    """
+    Recupera os detalhes completos de um evento.
+    Usa o schema 'EventoDetail' para incluir os nomes dos relacionamentos.
+    """
     evento = crud_event.get_evento(db=db, evento_id=evento_id)
     if not evento:
         raise HTTPException(status_code=404, detail="Evento não encontrado")
     
-# REGRA DE NEGÓCIO: Usuário operacional só pode ver evento que ele criou.
+    # REGRA DE NEGÓCIO: Usuário operacional só pode ver evento que ele criou.
     if current_user.perfil != 'administrativo' and evento.id_usuario_criador != current_user.id:
         raise HTTPException(status_code=403, detail="Você não tem permissão para ver este evento")
-        
+    
     return evento
 
 # READ TODOS OS EVENTOS COM BASE EM PERMISSOES, FILTROS E PAGINACAO
@@ -55,6 +58,10 @@ def read_eventos(
     id_cliente: Optional[int] = None,
     current_user: models_user.User = Depends(deps.get_current_active_operational_user)
 ):
+    """
+    Recupera a lista de eventos para os cards.
+    Usa o schema 'EventoPublic', que é mais leve.
+    """
     eventos = crud_event.get_multi_eventos(
         db=db, 
         current_user=current_user, 
@@ -72,22 +79,16 @@ def delete_evento(
     evento_id: int,
     current_user: models_user.User = Depends(deps.get_current_active_operational_user)
 ):
-    # 1. Validação de Existência do Evento
     evento = crud_event.get_evento(db=db, evento_id=evento_id)
     if not evento:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Evento com id {evento_id} não encontrado.",
         )
-
-    # 2. Validação de Permissão
     if current_user.perfil != 'administrativo' and evento.id_usuario_criador != current_user.id:
         raise HTTPException(status_code=403, detail="Você não tem permissão para deletar este evento")
-
-    # 3. Execução: Chama a função do CRUD para deletar
-    crud_event.delete_evento(db=db, evento_obj=evento)
     
-    # 4. Retorno: Envia uma resposta HTTP 204 (Sucesso, Sem Conteúdo)
+    crud_event.delete_evento(db=db, evento_obj=evento)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 # =============================================================================================================

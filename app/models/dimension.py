@@ -19,6 +19,9 @@ class Assessoria(Base):
     usuario_criador = relationship("User", back_populates="assessorias_criadas")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # <<< ADICIONADO: Relação de volta para a tabela de eventos
+    eventos = relationship("Evento", back_populates="assessoria")
 
 # Modelo de Dimensão para Buffets
 class Buffet(Base):
@@ -32,6 +35,9 @@ class Buffet(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    # <<< ADICIONADO: Relação de volta para a tabela de eventos
+    eventos = relationship("Evento", back_populates="buffet")
+
 # Modelo de Dimensão para Cidades
 class Cidade(Base):
     __tablename__ = "dim_cidades"
@@ -42,6 +48,9 @@ class Cidade(Base):
     usuario_criador = relationship("User", back_populates="cidades_criadas") 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # <<< ADICIONADO: Relação de volta para a tabela de eventos
+    eventos = relationship("Evento", back_populates="cidade")
 
 # Modelo de Dimensão para Clientes
 class Cliente(Base):
@@ -55,6 +64,9 @@ class Cliente(Base):
     usuario_criador = relationship("User", back_populates="clientes_criados")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # <<< ADICIONADO: Relação de volta para a tabela de eventos
+    eventos = relationship("Evento", back_populates="cliente")
 
 # Modelo de Dimensão para Unidades de Medida de Insumos
 class UnidadeMedida(str, enum.Enum):
@@ -87,6 +99,9 @@ class LocalEvento(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    # <<< ADICIONADO: Relação de volta para a tabela de eventos
+    eventos = relationship("Evento", back_populates="local_evento")
+
 # Modelo de Dimensão para Tipos de Evento
 class TipoEvento(Base):
     __tablename__ = "dim_tipos_evento"
@@ -96,3 +111,6 @@ class TipoEvento(Base):
     usuario_criador = relationship("User", back_populates="tipos_evento_criados") 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # <<< ADICIONADO: Relação de volta para a tabela de eventos
+    eventos = relationship("Evento", back_populates="tipo_evento")

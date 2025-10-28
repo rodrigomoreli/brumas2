@@ -1,60 +1,35 @@
 # app/crud/crud_event.py
 
 from sqlalchemy.orm import Session, joinedload
-
 from app.models import event as models_event
 from app.models import user as models_user
 from app.models import dimension as models_dimension
-
 from app.schemas import event as schemas_event
-from app.schemas import user as schemas_user
-
-
 from typing import Optional
 
 # ===================================================================
 #                           CRUD PARA EVENTOS
 # ===================================================================
 
-# READ EVENTO POR ID 
+# READ EVENTO POR ID (Já está correto)
 def get_evento(db: Session, evento_id: int) -> models_event.Evento | None:
-
-    return db.query(models_event.Evento).options(
-        joinedload(models_event.Evento.degustacoes),
-        joinedload(models_event.Evento.despesas)
-    ).filter(models_event.Evento.id == evento_id).first()
-
-# READ TODOS OS EVENTOS
-def get_eventos(db: Session, skip: int = 0, limit: int = 100) -> list[models_event.Evento]:
-    return db.query(models_event.Evento).offset(skip).limit(limit).all()
-
-# CREATE EVENTO COM VENDA ASSOCIADA
-def create_evento(db: Session, *, evento_in: schemas_event.EventoCreate, user_id: int) -> models_event.Evento:
-    # Prepara os dados do evento a partir do schema de entrada
-    evento_data = evento_in.model_dump(exclude={'venda'})
-
-    # Cria o objeto Evento no banco
-    db_evento = models_event.Evento(
-        **evento_data, 
-        id_usuario_criador=user_id
+    return (
+        db.query(models_event.Evento)
+        .options(
+            joinedload(models_event.Evento.cliente),
+            joinedload(models_event.Evento.local_evento),
+            joinedload(models_event.Evento.buffet),
+            joinedload(models_event.Evento.tipo_evento),
+            joinedload(models_event.Evento.cidade),
+            joinedload(models_event.Evento.assessoria),
+            joinedload(models_event.Evento.degustacoes),
+            joinedload(models_event.Evento.despesas)
+        )
+        .filter(models_event.Evento.id == evento_id)
+        .first()
     )
-    db.add(db_evento)
-    db.commit()
-    db.refresh(db_evento)
 
-    return db_evento
-
-# DELETE EVENTO
-def delete_evento(
-        db: Session, 
-        *, 
-        evento_obj: models_event.Evento
-) -> None:
-    db.delete(evento_obj)
-    db.commit()
-    return
-
-# UPDATE EVENTO --> RETORNA LISTA DE EVENTOS COM BASE EM PERMISSOES, FILTROS E PAGINACAO
+# --- FUNÇÃO get_multi_eventos CORRIGIDA ---
 def get_multi_eventos(
     db: Session, 
     *, 
@@ -63,45 +38,52 @@ def get_multi_eventos(
     limit: int = 100,
     id_cliente: Optional[int] = None
 ) -> list[models_event.Evento]:
-    
-    # 1. Inicia a consulta base na tabela de eventos
-    query = db.query(
-        models_event.Evento,
-        models_dimension.Cliente.nome.label("cliente_nome"),
-        models_dimension.LocalEvento.descricao.label("local_evento_nome"),
-        models_dimension.Buffet.descricao.label("buffet_nome")
-    ).join(
-        models_dimension.Cliente, models_event.Evento.id_cliente == models_dimension.Cliente.id
-    ).join(
-        models_dimension.LocalEvento, models_event.Evento.id_local_evento == models_dimension.LocalEvento.id
-    ).outerjoin(
-        models_dimension.Buffet, models_event.Evento.id_buffet == models_dimension.Buffet.id
+    """
+    Retorna uma lista de eventos, usando a mesma estratégia de 'joinedload'
+    para carregar os relacionamentos necessários para o schema 'EventoPublic'.
+    """
+    # 1. Inicia a consulta base
+    query = db.query(models_event.Evento).options(
+        # Carrega os relacionamentos necessários para as hybrid_properties
+        # que o schema EventoPublic usa (cliente_nome, local_evento_nome, etc.)
+        joinedload(models_event.Evento.cliente),
+        joinedload(models_event.Evento.local_evento),
+        joinedload(models_event.Evento.buffet)
     )
 
-    # 2. Aplica o filtro de permissão (A PARTE MAIS IMPORTANTE)
+    # 2. Aplica o filtro de permissão
     if current_user.perfil != 'administrativo':
-        query = query.filter(
-            models_event.Evento.id_usuario_criador == current_user.id
-        )
+        query = query.filter(models_event.Evento.id_usuario_criador == current_user.id)
 
     # 3. Aplica filtros opcionais
     if id_cliente:
-        query = query.filter(
-            models_event.Evento.id_cliente == id_cliente
-        )
-    
-    # 4. Aplica a paginação
-    results_from_db = query.offset(skip).limit(limit).all()
+        query = query.filter(models_event.Evento.id_cliente == id_cliente)
 
-    # 5. Processa os resultados para adicionar os nomes aos objetos Evento
-    eventos_processados = []
-    for evento_obj, cliente_nome, local_nome, buffet_nome in results_from_db:
-        evento_obj.cliente_nome = cliente_nome
-        evento_obj.local_evento_nome = local_nome
-        evento_obj.buffet_nome = buffet_nome        
-        eventos_processados.append(evento_obj)
+    # 4. Aplica a paginação e retorna os resultados
+    # Não precisamos mais do loop manual, o Pydantic e as hybrid_properties
+    # farão todo o trabalho pesado para nós.
+    return query.offset(skip).limit(limit).all()
 
-    return eventos_processados
+
+# ... (O resto do seu arquivo continua exatamente o mesmo) ...
+
+# CREATE EVENTO COM VENDA ASSOCIADA
+def create_evento(db: Session, *, evento_in: schemas_event.EventoCreate, user_id: int) -> models_event.Evento:
+    evento_data = evento_in.model_dump(exclude={'venda'})
+    db_evento = models_event.Evento(
+        **evento_data, 
+        id_usuario_criador=user_id
+    )
+    db.add(db_evento)
+    db.commit()
+    db.refresh(db_evento)
+    return db_evento
+
+# DELETE EVENTO
+def delete_evento(db: Session, *, evento_obj: models_event.Evento) -> None:
+    db.delete(evento_obj)
+    db.commit()
+    return
 
 # ===================================================================
 #                           CRUD PARA DESPESAS
