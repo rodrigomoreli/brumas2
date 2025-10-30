@@ -14,9 +14,6 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
 
-# Middleware de logging
-app.add_middleware(LoggingMiddleware)
-
 # Configuração do CORS para permitir acesso de frontends externos
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
@@ -26,6 +23,9 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+# Middleware de logging
+app.add_middleware(LoggingMiddleware)
 
 # Registro dos routers da aplicação
 app.include_router(login.router, tags=["Login"])

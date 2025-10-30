@@ -4,7 +4,7 @@ Define os modelos utilizados pela API para entrada, saída e exibição
 de dados relacionados à gestão de eventos.
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from datetime import date, datetime
 from decimal import Decimal
@@ -303,10 +303,10 @@ class DashboardData(BaseModel):
     """Dados completos para dashboard."""
 
     estatisticas_gerais: EventoStats
-    eventos_por_mes: List[EventosPorMes]
-    eventos_por_status: List[EventosPorStatus]
-    top_clientes: List[TopClientes]
-    despesas_por_insumo: List[DespesasPorInsumo]
+    eventos_por_mes: list[EventosPorMes]
+    eventos_por_status: list[EventosPorStatus]
+    top_clientes: list[TopClientes]
+    despesas_por_insumo: list[DespesasPorInsumo]
 
     class Config:
         json_schema_extra = {
