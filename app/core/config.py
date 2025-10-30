@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # Configurações de CORS
     BACKEND_CORS_ORIGINS: List[str] = []
 
+    # Configurações de Log
+    LOG_LEVEL: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    ENVIRONMENT: str = "development"  # development, staging, production
+
     class Config:
         case_sensitive = True
         env_file = ".env"

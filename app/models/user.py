@@ -2,11 +2,9 @@
 
 """
 Modelo de dados do usuário.
-
 Define a estrutura da tabela de usuários, incluindo atributos, tipos,
 restrições e relacionamentos com outras entidades da aplicação.
 """
-
 from sqlalchemy import (
     Column,
     Integer,
@@ -18,7 +16,6 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
-
 from app.db.base import Base
 
 
@@ -64,34 +61,61 @@ class User(Base):
         "Assessoria",
         back_populates="usuario_criador",
         cascade="all, delete-orphan",
+        foreign_keys="[Assessoria.id_usuario_criador]",
     )
     buffets_criados = relationship(
         "Buffet",
         back_populates="usuario_criador",
         cascade="all, delete-orphan",
+        foreign_keys="[Buffet.id_usuario_criador]",
     )
     cidades_criadas = relationship(
         "Cidade",
         back_populates="usuario_criador",
         cascade="all, delete-orphan",
+        foreign_keys="[Cidade.id_usuario_criador]",
     )
     clientes_criados = relationship(
         "Cliente",
         back_populates="usuario_criador",
         cascade="all, delete-orphan",
+        foreign_keys="[Cliente.id_usuario_criador]",
     )
     insumos_criados = relationship(
         "Insumo",
         back_populates="usuario_criador",
         cascade="all, delete-orphan",
+        foreign_keys="[Insumo.id_usuario_criador]",
     )
     locais_evento_criados = relationship(
         "LocalEvento",
         back_populates="usuario_criador",
         cascade="all, delete-orphan",
+        foreign_keys="[LocalEvento.id_usuario_criador]",
     )
     tipos_evento_criados = relationship(
         "TipoEvento",
         back_populates="usuario_criador",
         cascade="all, delete-orphan",
+        foreign_keys="[TipoEvento.id_usuario_criador]",
+    )
+
+    # RELACIONAMENTOS: Eventos, Despesas e Degustações
+    eventos_criados = relationship(
+        "Evento",
+        back_populates="usuario_criador",
+        cascade="all, delete-orphan",
+        foreign_keys="[Evento.id_usuario_criador]",
+    )
+    despesas_criadas = relationship(
+        "Despesa",
+        back_populates="usuario_criador",
+        cascade="all, delete-orphan",
+        foreign_keys="[Despesa.id_usuario_criador]",
+    )
+    degustacoes_criadas = relationship(
+        "Degustacao",
+        back_populates="usuario_criador",
+        cascade="all, delete-orphan",
+        foreign_keys="[Degustacao.id_usuario_criador]",
     )

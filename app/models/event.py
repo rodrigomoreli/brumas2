@@ -1,10 +1,11 @@
+# app/models/event.py
+
 """
 Modelos relacionados a eventos.
 Este módulo define os modelos ORM para eventos, despesas e degustações.
 Inclui enums de status, relacionamentos entre entidades e propriedades
 híbridas para facilitar a leitura por Pydantic.
 """
-
 from sqlalchemy import (
     Column,
     Integer,
@@ -77,13 +78,11 @@ class Evento(Base):
     observacoes_venda = Column(Text)
 
     created_at = Column(
-        DateTime(timezone=True),
-        nullable=False,  # ✅ Não pode ser NULL
-        server_default=func.now(),
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at = Column(
         DateTime(timezone=True),
-        nullable=False,  # ✅ Não pode ser NULL
+        nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
     )
@@ -95,7 +94,11 @@ class Evento(Base):
     cidade = relationship("Cidade", back_populates="eventos")
     assessoria = relationship("Assessoria", back_populates="eventos")
     buffet = relationship("Buffet", back_populates="eventos")
-    usuario_criador = relationship("User")
+    usuario_criador = relationship(
+        "User",
+        back_populates="eventos_criados",
+        foreign_keys=[id_usuario_criador],
+    )
 
     degustacoes = relationship(
         "Degustacao",
@@ -167,7 +170,11 @@ class Despesa(Base):
 
     evento = relationship("Evento", back_populates="despesas")
     insumo = relationship("Insumo")
-    usuario_criador = relationship("User")
+    usuario_criador = relationship(
+        "User",
+        back_populates="despesas_criadas",
+        foreign_keys=[id_usuario_criador],
+    )
 
 
 class Degustacao(Base):
@@ -201,4 +208,8 @@ class Degustacao(Base):
     )
 
     evento = relationship("Evento", back_populates="degustacoes")
-    usuario_criador = relationship("User")
+    usuario_criador = relationship(
+        "User",
+        back_populates="degustacoes_criadas",
+        foreign_keys=[id_usuario_criador],
+    )

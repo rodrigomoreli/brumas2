@@ -1,19 +1,21 @@
+# app/crud/crud_event.py
+
 """
 Operações CRUD para eventos, despesas e degustações.
 Define funções para manipulação de dados relacionados a eventos e suas
 entidades associadas, utilizando SQLAlchemy e os schemas da aplicação.
 """
-
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import desc, asc
 from fastapi import HTTPException, status
 from app.models import event as models_event
 from app.models import user as models_user
 from app.models import dimension as models_dimension
 from app.schemas import event as schemas_event
 from typing import Optional
+from datetime import date
 
 
-# Validar relacionamentos
 def validate_evento_relationships(db: Session, evento_data: dict) -> None:
     """
     Valida se todos os IDs de relacionamentos existem no banco.
@@ -125,21 +127,129 @@ def get_multi_eventos(
     skip: int = 0,
     limit: int = 100,
     id_cliente: Optional[int] = None,
+    status_evento: Optional[str] = None,
+    data_inicio: Optional[date] = None,
+    data_fim: Optional[date] = None,
+    id_cidade: Optional[int] = None,
+    id_buffet: Optional[int] = None,
+    order_by: str = "data_evento",
+    order_direction: str = "desc",
 ) -> list[models_event.Evento]:
-    """Retorna uma lista de eventos com filtros e paginação."""
+    """
+    Retorna uma lista de eventos com filtros avançados e ordenação.
+
+    Args:
+        db: Sessão do banco de dados
+        current_user: Usuário autenticado
+        skip: Número de registros a pular (paginação)
+        limit: Número máximo de registros a retornar
+        id_cliente: Filtrar por cliente específico
+        status_evento: Filtrar por status (Orçamento, Confirmado, etc)
+        data_inicio: Filtrar eventos a partir desta data
+        data_fim: Filtrar eventos até esta data
+        id_cidade: Filtrar por cidade
+        id_buffet: Filtrar por buffet
+        order_by: Campo para ordenação (data_evento, created_at, vlr_total_contrato)
+        order_direction: Direção da ordenação (asc ou desc)
+
+    Returns:
+        Lista de eventos filtrados e ordenados
+    """
     query = db.query(models_event.Evento).options(
         joinedload(models_event.Evento.cliente),
         joinedload(models_event.Evento.local_evento),
         joinedload(models_event.Evento.buffet),
+        joinedload(models_event.Evento.tipo_evento),
+        joinedload(models_event.Evento.cidade),
     )
 
+    # Filtro de permissão: usuários não-admin só veem seus próprios eventos
     if current_user.perfil != "administrativo":
         query = query.filter(models_event.Evento.id_usuario_criador == current_user.id)
 
+    # Aplicar filtros
     if id_cliente:
         query = query.filter(models_event.Evento.id_cliente == id_cliente)
 
+    if status_evento:
+        query = query.filter(models_event.Evento.status_evento == status_evento)
+
+    if data_inicio:
+        query = query.filter(models_event.Evento.data_evento >= data_inicio)
+
+    if data_fim:
+        query = query.filter(models_event.Evento.data_evento <= data_fim)
+
+    if id_cidade:
+        query = query.filter(models_event.Evento.id_cidade == id_cidade)
+
+    if id_buffet:
+        query = query.filter(models_event.Evento.id_buffet == id_buffet)
+
+    # Aplicar ordenação
+    valid_order_fields = [
+        "data_evento",
+        "created_at",
+        "updated_at",
+        "vlr_total_contrato",
+        "qtde_convidados_prevista",
+        "status_evento",
+    ]
+
+    if order_by not in valid_order_fields:
+        order_by = "data_evento"  # Default seguro
+
+    order_column = getattr(models_event.Evento, order_by)
+
+    if order_direction.lower() == "asc":
+        query = query.order_by(asc(order_column))
+    else:
+        query = query.order_by(desc(order_column))
+
     return query.offset(skip).limit(limit).all()
+
+
+def count_eventos(
+    db: Session,
+    *,
+    current_user: models_user.User,
+    id_cliente: Optional[int] = None,
+    status_evento: Optional[str] = None,
+    data_inicio: Optional[date] = None,
+    data_fim: Optional[date] = None,
+    id_cidade: Optional[int] = None,
+    id_buffet: Optional[int] = None,
+) -> int:
+    """
+    Conta o total de eventos com os filtros aplicados.
+    Usado para calcular paginação.
+    """
+    query = db.query(models_event.Evento)
+
+    # Filtro de permissão
+    if current_user.perfil != "administrativo":
+        query = query.filter(models_event.Evento.id_usuario_criador == current_user.id)
+
+    # Aplicar mesmos filtros
+    if id_cliente:
+        query = query.filter(models_event.Evento.id_cliente == id_cliente)
+
+    if status_evento:
+        query = query.filter(models_event.Evento.status_evento == status_evento)
+
+    if data_inicio:
+        query = query.filter(models_event.Evento.data_evento >= data_inicio)
+
+    if data_fim:
+        query = query.filter(models_event.Evento.data_evento <= data_fim)
+
+    if id_cidade:
+        query = query.filter(models_event.Evento.id_cidade == id_cidade)
+
+    if id_buffet:
+        query = query.filter(models_event.Evento.id_buffet == id_buffet)
+
+    return query.count()
 
 
 def create_evento(
@@ -151,7 +261,7 @@ def create_evento(
     """Cria um novo evento associado ao usuário criador."""
     evento_data = evento_in.model_dump()
 
-    # ✅ Validar relacionamentos antes de criar
+    # Validar relacionamentos antes de criar
     validate_evento_relationships(db, evento_data)
 
     db_evento = models_event.Evento(**evento_data, id_usuario_criador=user_id)
@@ -170,7 +280,7 @@ def update_evento(
     """Atualiza os dados de um evento existente."""
     update_data = evento_in.model_dump(exclude_unset=True)
 
-    # ✅ Validar relacionamentos antes de atualizar
+    # Validar relacionamentos antes de atualizar
     validate_evento_relationships(db, update_data)
 
     for field, value in update_data.items():
@@ -202,7 +312,7 @@ def add_despesa_to_evento(
     """Adiciona uma despesa a um evento."""
     despesa_data = despesa_in.model_dump()
 
-    # ✅ Validar se o insumo existe
+    # Validar se o insumo existe
     insumo = (
         db.query(models_dimension.Insumo)
         .filter(models_dimension.Insumo.id == despesa_data["id_insumo"])
@@ -234,7 +344,7 @@ def update_despesa(
     """Atualiza os dados de uma despesa."""
     update_data = despesa_in.model_dump(exclude_unset=True)
 
-    # ✅ Validar se o insumo existe (se estiver sendo atualizado)
+    # Validar se o insumo existe (se estiver sendo atualizado)
     if "id_insumo" in update_data and update_data["id_insumo"]:
         insumo = (
             db.query(models_dimension.Insumo)
