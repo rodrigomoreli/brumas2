@@ -405,6 +405,349 @@ def delete_evento(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+# ========== ✅ ENDPOINTS DE ESTATÍSTICAS E DASHBOARD ==========
+
+
+@router.get(
+    "/stats/geral",
+    response_model=schemas_event.EventoStats,
+    summary="Estatísticas gerais de eventos",
+    description="""
+    Retorna estatísticas agregadas dos eventos.
+    
+    **Métricas incluídas:**
+    - Total de eventos por status
+    - Valores totais e médios de contratos
+    - Total de convidados previstos
+    - Total de despesas e degustações
+    
+    **Filtros opcionais:**
+    - `data_inicio`: Filtrar eventos a partir desta data
+    - `data_fim`: Filtrar eventos até esta data
+    
+    **Exemplos:**
+    - Estatísticas do ano: `?data_inicio=2025-01-01&data_fim=2025-12-31`
+    - Estatísticas do mês: `?data_inicio=2025-12-01&data_fim=2025-12-31`
+    """,
+    responses={
+        200: {"description": "Estatísticas retornadas com sucesso"},
+        401: {"description": "Não autenticado"},
+    },
+)
+def get_eventos_statistics(
+    db: Session = Depends(deps.get_db),
+    data_inicio: Optional[date] = Query(
+        None, description="Data inicial (formato: YYYY-MM-DD)"
+    ),
+    data_fim: Optional[date] = Query(
+        None, description="Data final (formato: YYYY-MM-DD)"
+    ),
+    current_user: models_user.User = Depends(deps.get_current_active_operational_user),
+):
+    """
+    Retorna estatísticas gerais dos eventos.
+    """
+    log_info(
+        "Buscando estatísticas de eventos",
+        extra={
+            "user_id": current_user.id,
+            "data_inicio": str(data_inicio) if data_inicio else None,
+            "data_fim": str(data_fim) if data_fim else None,
+        },
+    )
+
+    stats = crud_event.get_eventos_stats(
+        db=db,
+        current_user=current_user,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+    )
+
+    log_info(
+        "Estatísticas recuperadas com sucesso",
+        extra={
+            "user_id": current_user.id,
+            "total_eventos": stats["total_eventos"],
+            "valor_total": float(stats["valor_total_contratos"]),
+        },
+    )
+
+    return stats
+
+
+@router.get(
+    "/stats/por-mes",
+    response_model=List[schemas_event.EventosPorMes],
+    summary="Eventos agrupados por mês",
+    description="""
+    Retorna eventos agrupados por mês com totais e valores.
+    
+    Útil para gráficos de linha mostrando evolução temporal.
+    
+    **Filtros opcionais:**
+    - `data_inicio`: Filtrar eventos a partir desta data
+    - `data_fim`: Filtrar eventos até esta data
+    """,
+)
+def get_eventos_por_mes(
+    db: Session = Depends(deps.get_db),
+    data_inicio: Optional[date] = Query(
+        None, description="Data inicial (formato: YYYY-MM-DD)"
+    ),
+    data_fim: Optional[date] = Query(
+        None, description="Data final (formato: YYYY-MM-DD)"
+    ),
+    current_user: models_user.User = Depends(deps.get_current_active_operational_user),
+):
+    """
+    Retorna eventos agrupados por mês.
+    """
+    log_info("Buscando eventos por mês", extra={"user_id": current_user.id})
+
+    return crud_event.get_eventos_por_mes(
+        db=db,
+        current_user=current_user,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+    )
+
+
+@router.get(
+    "/stats/por-status",
+    response_model=List[schemas_event.EventosPorStatus],
+    summary="Eventos agrupados por status",
+    description="""
+    Retorna eventos agrupados por status com percentuais.
+    
+    Útil para gráficos de pizza mostrando distribuição de status.
+    
+    **Filtros opcionais:**
+    - `data_inicio`: Filtrar eventos a partir desta data
+    - `data_fim`: Filtrar eventos até esta data
+    """,
+)
+def get_eventos_por_status(
+    db: Session = Depends(deps.get_db),
+    data_inicio: Optional[date] = Query(
+        None, description="Data inicial (formato: YYYY-MM-DD)"
+    ),
+    data_fim: Optional[date] = Query(
+        None, description="Data final (formato: YYYY-MM-DD)"
+    ),
+    current_user: models_user.User = Depends(deps.get_current_active_operational_user),
+):
+    """
+    Retorna eventos agrupados por status.
+    """
+    log_info("Buscando eventos por status", extra={"user_id": current_user.id})
+
+    return crud_event.get_eventos_por_status(
+        db=db,
+        current_user=current_user,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+    )
+
+
+@router.get(
+    "/stats/top-clientes",
+    response_model=List[schemas_event.TopClientes],
+    summary="Top clientes por valor",
+    description="""
+    Retorna os clientes com maior valor total em contratos.
+    
+    **Parâmetros:**
+    - `limit`: Quantidade de clientes a retornar (padrão: 10)
+    - `data_inicio`: Filtrar eventos a partir desta data
+    - `data_fim`: Filtrar eventos até esta data
+    
+    **Exemplos:**
+    - Top 5 clientes: `?limit=5`
+    - Top 10 clientes do ano: `?limit=10&data_inicio=2025-01-01&data_fim=2025-12-31`
+    """,
+)
+def get_top_clientes(
+    db: Session = Depends(deps.get_db),
+    limit: int = Query(
+        10, ge=1, le=100, description="Quantidade de clientes a retornar"
+    ),
+    data_inicio: Optional[date] = Query(
+        None, description="Data inicial (formato: YYYY-MM-DD)"
+    ),
+    data_fim: Optional[date] = Query(
+        None, description="Data final (formato: YYYY-MM-DD)"
+    ),
+    current_user: models_user.User = Depends(deps.get_current_active_operational_user),
+):
+    """
+    Retorna os top clientes por valor de contratos.
+    """
+    log_info(
+        "Buscando top clientes", extra={"user_id": current_user.id, "limit": limit}
+    )
+
+    return crud_event.get_top_clientes(
+        db=db,
+        current_user=current_user,
+        limit=limit,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+    )
+
+
+@router.get(
+    "/stats/despesas-por-insumo",
+    response_model=List[schemas_event.DespesasPorInsumo],
+    summary="Despesas agrupadas por insumo",
+    description="""
+    Retorna as despesas agrupadas por insumo com totais.
+    
+    Útil para análise de custos e identificação dos insumos mais caros.
+    
+    **Parâmetros:**
+    - `limit`: Quantidade de insumos a retornar (padrão: 10)
+    - `data_inicio`: Filtrar eventos a partir desta data
+    - `data_fim`: Filtrar eventos até esta data
+    
+    **Exemplos:**
+    - Top 5 insumos mais caros: `?limit=5`
+    - Despesas do mês: `?data_inicio=2025-12-01&data_fim=2025-12-31`
+    """,
+)
+def get_despesas_por_insumo(
+    db: Session = Depends(deps.get_db),
+    limit: int = Query(
+        10, ge=1, le=100, description="Quantidade de insumos a retornar"
+    ),
+    data_inicio: Optional[date] = Query(
+        None, description="Data inicial (formato: YYYY-MM-DD)"
+    ),
+    data_fim: Optional[date] = Query(
+        None, description="Data final (formato: YYYY-MM-DD)"
+    ),
+    current_user: models_user.User = Depends(deps.get_current_active_operational_user),
+):
+    """
+    Retorna despesas agrupadas por insumo.
+    """
+    log_info(
+        "Buscando despesas por insumo",
+        extra={"user_id": current_user.id, "limit": limit},
+    )
+
+    return crud_event.get_despesas_por_insumo(
+        db=db,
+        current_user=current_user,
+        limit=limit,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+    )
+
+
+@router.get(
+    "/stats/dashboard",
+    response_model=schemas_event.DashboardData,
+    summary="Dados completos para dashboard",
+    description="""
+    Retorna todos os dados necessários para montar um dashboard completo.
+    
+    **Inclui:**
+    - Estatísticas gerais
+    - Eventos por mês
+    - Eventos por status
+    - Top 10 clientes
+    - Top 10 insumos mais caros
+    
+    **Filtros opcionais:**
+    - `data_inicio`: Filtrar eventos a partir desta data
+    - `data_fim`: Filtrar eventos até esta data
+    - `top_limit`: Quantidade de itens nos tops (padrão: 10)
+    
+    **Exemplo:**
+    - Dashboard do ano: `?data_inicio=2025-01-01&data_fim=2025-12-31&top_limit=5`
+    """,
+)
+def get_dashboard_data(
+    db: Session = Depends(deps.get_db),
+    data_inicio: Optional[date] = Query(
+        None, description="Data inicial (formato: YYYY-MM-DD)"
+    ),
+    data_fim: Optional[date] = Query(
+        None, description="Data final (formato: YYYY-MM-DD)"
+    ),
+    top_limit: int = Query(
+        10, ge=1, le=50, description="Quantidade de itens nos rankings"
+    ),
+    current_user: models_user.User = Depends(deps.get_current_active_operational_user),
+):
+    """
+    Retorna dados completos para dashboard em uma única requisição.
+    """
+    log_info(
+        "Buscando dados completos do dashboard",
+        extra={
+            "user_id": current_user.id,
+            "data_inicio": str(data_inicio) if data_inicio else None,
+            "data_fim": str(data_fim) if data_fim else None,
+        },
+    )
+
+    # Buscar todos os dados em paralelo
+    estatisticas_gerais = crud_event.get_eventos_stats(
+        db=db,
+        current_user=current_user,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+    )
+
+    eventos_por_mes = crud_event.get_eventos_por_mes(
+        db=db,
+        current_user=current_user,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+    )
+
+    eventos_por_status = crud_event.get_eventos_por_status(
+        db=db,
+        current_user=current_user,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+    )
+
+    top_clientes = crud_event.get_top_clientes(
+        db=db,
+        current_user=current_user,
+        limit=top_limit,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+    )
+
+    despesas_por_insumo = crud_event.get_despesas_por_insumo(
+        db=db,
+        current_user=current_user,
+        limit=top_limit,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+    )
+
+    log_info(
+        "Dados do dashboard recuperados com sucesso",
+        extra={
+            "user_id": current_user.id,
+            "total_eventos": estatisticas_gerais["total_eventos"],
+            "meses_com_dados": len(eventos_por_mes),
+        },
+    )
+
+    return {
+        "estatisticas_gerais": estatisticas_gerais,
+        "eventos_por_mes": eventos_por_mes,
+        "eventos_por_status": eventos_por_status,
+        "top_clientes": top_clientes,
+        "despesas_por_insumo": despesas_por_insumo,
+    }
+
+
 # ========== ENDPOINTS DE DESPESAS ==========
 
 

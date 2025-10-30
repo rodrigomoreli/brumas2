@@ -422,3 +422,367 @@ def delete_degustacao(
     """Remove uma degustação do banco de dados."""
     db.delete(degustacao_obj)
     db.commit()
+
+
+# ========== ✅ FUNÇÕES DE ESTATÍSTICAS ==========
+
+from sqlalchemy import func, extract, case
+from datetime import date as date_type
+from typing import List, Dict, Any
+
+
+def get_eventos_stats(
+    db: Session,
+    *,
+    current_user: models_user.User,
+    data_inicio: Optional[date_type] = None,
+    data_fim: Optional[date_type] = None,
+) -> Dict[str, Any]:
+    """
+    Retorna estatísticas gerais dos eventos.
+
+    Args:
+        db: Sessão do banco de dados
+        current_user: Usuário autenticado
+        data_inicio: Data inicial para filtro
+        data_fim: Data final para filtro
+
+    Returns:
+        Dicionário com estatísticas agregadas
+    """
+    # Query base
+    query = db.query(models_event.Evento)
+
+    # Filtro de permissão
+    if current_user.perfil != "administrativo":
+        query = query.filter(models_event.Evento.id_usuario_criador == current_user.id)
+
+    # Filtros de data
+    if data_inicio:
+        query = query.filter(models_event.Evento.data_evento >= data_inicio)
+    if data_fim:
+        query = query.filter(models_event.Evento.data_evento <= data_fim)
+
+    # Total de eventos
+    total_eventos = query.count()
+
+    # Eventos por status
+    eventos_orcamento = query.filter(
+        models_event.Evento.status_evento == "Orçamento"
+    ).count()
+    eventos_confirmados = query.filter(
+        models_event.Evento.status_evento == "Confirmado"
+    ).count()
+    eventos_realizados = query.filter(
+        models_event.Evento.status_evento == "Realizado"
+    ).count()
+    eventos_cancelados = query.filter(
+        models_event.Evento.status_evento == "Cancelado"
+    ).count()
+
+    # Valores totais
+    valores = query.with_entities(
+        func.coalesce(func.sum(models_event.Evento.vlr_total_contrato), 0).label(
+            "total"
+        ),
+        func.coalesce(func.avg(models_event.Evento.vlr_total_contrato), 0).label(
+            "media"
+        ),
+    ).first()
+
+    valor_total_contratos = valores.total if valores else 0
+    valor_medio_contrato = valores.media if valores else 0
+
+    # Valor total de orçamentos
+    valor_orcamentos = (
+        query.filter(models_event.Evento.status_evento == "Orçamento")
+        .with_entities(
+            func.coalesce(func.sum(models_event.Evento.vlr_total_contrato), 0)
+        )
+        .scalar()
+        or 0
+    )
+
+    # Valor total de confirmados
+    valor_confirmados = (
+        query.filter(models_event.Evento.status_evento == "Confirmado")
+        .with_entities(
+            func.coalesce(func.sum(models_event.Evento.vlr_total_contrato), 0)
+        )
+        .scalar()
+        or 0
+    )
+
+    # Total de convidados
+    convidados = query.with_entities(
+        func.coalesce(func.sum(models_event.Evento.qtde_convidados_prevista), 0).label(
+            "total"
+        ),
+        func.coalesce(func.avg(models_event.Evento.qtde_convidados_prevista), 0).label(
+            "media"
+        ),
+    ).first()
+
+    total_convidados = convidados.total if convidados else 0
+    media_convidados = float(convidados.media) if convidados else 0.0
+
+    # Total de despesas
+    despesas_query = db.query(models_event.Despesa).join(models_event.Evento)
+    if current_user.perfil != "administrativo":
+        despesas_query = despesas_query.filter(
+            models_event.Evento.id_usuario_criador == current_user.id
+        )
+    if data_inicio:
+        despesas_query = despesas_query.filter(
+            models_event.Evento.data_evento >= data_inicio
+        )
+    if data_fim:
+        despesas_query = despesas_query.filter(
+            models_event.Evento.data_evento <= data_fim
+        )
+
+    total_despesas = (
+        despesas_query.with_entities(
+            func.coalesce(func.sum(models_event.Despesa.vlr_total_pago), 0)
+        ).scalar()
+        or 0
+    )
+
+    # Total de degustações
+    degustacoes_query = db.query(models_event.Degustacao).join(models_event.Evento)
+    if current_user.perfil != "administrativo":
+        degustacoes_query = degustacoes_query.filter(
+            models_event.Evento.id_usuario_criador == current_user.id
+        )
+    if data_inicio:
+        degustacoes_query = degustacoes_query.filter(
+            models_event.Evento.data_evento >= data_inicio
+        )
+    if data_fim:
+        degustacoes_query = degustacoes_query.filter(
+            models_event.Evento.data_evento <= data_fim
+        )
+
+    total_degustacoes = degustacoes_query.count()
+    valor_degustacoes = (
+        degustacoes_query.with_entities(
+            func.coalesce(func.sum(models_event.Degustacao.vlr_degustacao), 0)
+        ).scalar()
+        or 0
+    )
+
+    return {
+        "total_eventos": total_eventos,
+        "eventos_orcamento": eventos_orcamento,
+        "eventos_confirmados": eventos_confirmados,
+        "eventos_realizados": eventos_realizados,
+        "eventos_cancelados": eventos_cancelados,
+        "valor_total_contratos": valor_total_contratos,
+        "valor_medio_contrato": valor_medio_contrato,
+        "valor_total_orcamentos": valor_orcamentos,
+        "valor_total_confirmados": valor_confirmados,
+        "total_convidados_previsto": total_convidados,
+        "media_convidados_por_evento": media_convidados,
+        "total_despesas": total_despesas,
+        "total_degustacoes": total_degustacoes,
+        "valor_total_degustacoes": valor_degustacoes,
+    }
+
+
+def get_eventos_por_mes(
+    db: Session,
+    *,
+    current_user: models_user.User,
+    data_inicio: Optional[date_type] = None,
+    data_fim: Optional[date_type] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Retorna eventos agrupados por mês.
+    """
+    query = db.query(
+        func.strftime("%Y-%m", models_event.Evento.data_evento).label("mes"),
+        func.count(models_event.Evento.id).label("total_eventos"),
+        func.coalesce(func.sum(models_event.Evento.vlr_total_contrato), 0).label(
+            "valor_total"
+        ),
+    )
+
+    if current_user.perfil != "administrativo":
+        query = query.filter(models_event.Evento.id_usuario_criador == current_user.id)
+
+    if data_inicio:
+        query = query.filter(models_event.Evento.data_evento >= data_inicio)
+    if data_fim:
+        query = query.filter(models_event.Evento.data_evento <= data_fim)
+
+    query = query.group_by("mes").order_by("mes")
+
+    results = query.all()
+
+    return [
+        {
+            "mes": r.mes,
+            "total_eventos": r.total_eventos,
+            "valor_total": r.valor_total,
+        }
+        for r in results
+    ]
+
+
+def get_eventos_por_status(
+    db: Session,
+    *,
+    current_user: models_user.User,
+    data_inicio: Optional[date_type] = None,
+    data_fim: Optional[date_type] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Retorna eventos agrupados por status.
+    """
+    query = db.query(
+        models_event.Evento.status_evento.label("status"),
+        func.count(models_event.Evento.id).label("total"),
+        func.coalesce(func.sum(models_event.Evento.vlr_total_contrato), 0).label(
+            "valor_total"
+        ),
+    )
+
+    if current_user.perfil != "administrativo":
+        query = query.filter(models_event.Evento.id_usuario_criador == current_user.id)
+
+    if data_inicio:
+        query = query.filter(models_event.Evento.data_evento >= data_inicio)
+    if data_fim:
+        query = query.filter(models_event.Evento.data_evento <= data_fim)
+
+    query = query.group_by("status")
+
+    results = query.all()
+    total_geral = sum(r.total for r in results)
+
+    return [
+        {
+            "status": r.status,
+            "total": r.total,
+            "percentual": round(
+                (r.total / total_geral * 100) if total_geral > 0 else 0, 2
+            ),
+            "valor_total": r.valor_total,
+        }
+        for r in results
+    ]
+
+
+def get_top_clientes(
+    db: Session,
+    *,
+    current_user: models_user.User,
+    limit: int = 10,
+    data_inicio: Optional[date_type] = None,
+    data_fim: Optional[date_type] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Retorna os top clientes por valor de contratos.
+    """
+    query = db.query(
+        models_event.Evento.id_cliente,
+        models_dimension.Cliente.nome.label("cliente_nome"),
+        func.count(models_event.Evento.id).label("total_eventos"),
+        func.coalesce(func.sum(models_event.Evento.vlr_total_contrato), 0).label(
+            "valor_total"
+        ),
+    ).join(
+        models_dimension.Cliente,
+        models_event.Evento.id_cliente == models_dimension.Cliente.id,
+    )
+
+    if current_user.perfil != "administrativo":
+        query = query.filter(models_event.Evento.id_usuario_criador == current_user.id)
+
+    if data_inicio:
+        query = query.filter(models_event.Evento.data_evento >= data_inicio)
+    if data_fim:
+        query = query.filter(models_event.Evento.data_evento <= data_fim)
+
+    query = (
+        query.group_by(models_event.Evento.id_cliente, models_dimension.Cliente.nome)
+        .order_by(desc(func.sum(models_event.Evento.vlr_total_contrato)))
+        .limit(limit)
+    )
+
+    results = query.all()
+
+    return [
+        {
+            "id_cliente": r.id_cliente,
+            "cliente_nome": r.cliente_nome,
+            "total_eventos": r.total_eventos,
+            "valor_total": r.valor_total,
+        }
+        for r in results
+    ]
+
+
+def get_despesas_por_insumo(
+    db: Session,
+    *,
+    current_user: models_user.User,
+    limit: int = 10,
+    data_inicio: Optional[date_type] = None,
+    data_fim: Optional[date_type] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Retorna despesas agrupadas por insumo.
+    """
+    query = (
+        db.query(
+            models_event.Despesa.id_insumo,
+            models_dimension.Insumo.descricao.label("insumo_descricao"),
+            func.coalesce(func.sum(models_event.Despesa.quantidade), 0).label(
+                "quantidade_total"
+            ),
+            func.coalesce(func.sum(models_event.Despesa.vlr_total_pago), 0).label(
+                "valor_total"
+            ),
+            func.count(func.distinct(models_event.Despesa.id_evento)).label(
+                "numero_eventos"
+            ),
+        )
+        .join(
+            models_dimension.Insumo,
+            models_event.Despesa.id_insumo == models_dimension.Insumo.id,
+        )
+        .join(
+            models_event.Evento,
+            models_event.Despesa.id_evento == models_event.Evento.id,
+        )
+    )
+
+    if current_user.perfil != "administrativo":
+        query = query.filter(models_event.Evento.id_usuario_criador == current_user.id)
+
+    if data_inicio:
+        query = query.filter(models_event.Evento.data_evento >= data_inicio)
+    if data_fim:
+        query = query.filter(models_event.Evento.data_evento <= data_fim)
+
+    query = (
+        query.group_by(
+            models_event.Despesa.id_insumo, models_dimension.Insumo.descricao
+        )
+        .order_by(desc(func.sum(models_event.Despesa.vlr_total_pago)))
+        .limit(limit)
+    )
+
+    results = query.all()
+
+    return [
+        {
+            "id_insumo": r.id_insumo,
+            "insumo_descricao": r.insumo_descricao,
+            "quantidade_total": r.quantidade_total,
+            "valor_total": r.valor_total,
+            "numero_eventos": r.numero_eventos,
+        }
+        for r in results
+    ]
