@@ -1,3 +1,5 @@
+# app/schemas/dimension.py
+
 """
 Schemas Pydantic para entidades dimensionais.
 Define os modelos utilizados pela API para criação, atualização e

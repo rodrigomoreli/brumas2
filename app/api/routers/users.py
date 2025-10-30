@@ -18,6 +18,28 @@ from app.models import user as models_user
 router = APIRouter()
 
 
+@router.get(
+    "/me",
+    response_model=schemas_user.User,
+    summary="Buscar dados do usuário autenticado",
+    description="Retorna os dados do usuário atualmente autenticado",
+    responses={
+        200: {"description": "Dados do usuário retornados com sucesso"},
+        401: {"description": "Não autenticado"},
+    },
+)
+def read_current_user(
+    current_user: models_user.User = Depends(deps.get_current_active_user),
+) -> schemas_user.User:
+    """
+    Retorna os dados do usuário autenticado.
+
+    Qualquer usuário autenticado pode acessar seus próprios dados.
+    Não requer permissões especiais.
+    """
+    return current_user
+
+
 @router.post(
     "/",
     response_model=schemas_user.User,

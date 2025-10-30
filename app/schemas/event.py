@@ -1,3 +1,5 @@
+# app/schemas/event.py
+
 """
 Schemas Pydantic para eventos, despesas e degustações.
 Define os modelos utilizados pela API para entrada, saída e exibição
