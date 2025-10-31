@@ -600,7 +600,7 @@ def get_eventos_por_mes(
     Retorna eventos agrupados por mês.
     """
     query = db.query(
-        func.strftime("%Y-%m", models_event.Evento.data_evento).label("mes"),
+        func.to_char(models_event.Evento.data_evento, "YYYY-MM").label("mes"),
         func.count(models_event.Evento.id).label("total_eventos"),
         func.coalesce(func.sum(models_event.Evento.vlr_total_contrato), 0).label(
             "valor_total"
