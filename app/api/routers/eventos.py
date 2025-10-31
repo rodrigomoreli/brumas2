@@ -8,7 +8,7 @@ ou administrativo.
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import date
+from datetime import date as date_type
 
 from app.api import deps
 from app.crud import crud_event
@@ -405,7 +405,7 @@ def delete_evento(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-# ========== ✅ ENDPOINTS DE ESTATÍSTICAS E DASHBOARD ==========
+# ========== ENDPOINTS DE ESTATÍSTICAS E DASHBOARD ==========
 
 
 @router.get(
