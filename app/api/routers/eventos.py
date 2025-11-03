@@ -210,10 +210,10 @@ def read_eventos(
         None,
         description="Filtrar por status (Orçamento, Confirmado, Realizado, Cancelado)",
     ),
-    data_inicio: Optional[date] = Query(
+    data_inicio: Optional[date_type] = Query(
         None, description="Data inicial (formato: YYYY-MM-DD)"
     ),
-    data_fim: Optional[date] = Query(
+    data_fim: Optional[date_type] = Query(
         None, description="Data final (formato: YYYY-MM-DD)"
     ),
     id_cidade: Optional[int] = Query(None, description="Filtrar por ID da cidade"),
@@ -436,10 +436,10 @@ def delete_evento(
 )
 def get_eventos_statistics(
     db: Session = Depends(deps.get_db),
-    data_inicio: Optional[date] = Query(
+    data_inicio: Optional[date_type] = Query(
         None, description="Data inicial (formato: YYYY-MM-DD)"
     ),
-    data_fim: Optional[date] = Query(
+    data_fim: Optional[date_type] = Query(
         None, description="Data final (formato: YYYY-MM-DD)"
     ),
     current_user: models_user.User = Depends(deps.get_current_active_operational_user),
@@ -491,10 +491,10 @@ def get_eventos_statistics(
 )
 def get_eventos_por_mes(
     db: Session = Depends(deps.get_db),
-    data_inicio: Optional[date] = Query(
+    data_inicio: Optional[date_type] = Query(
         None, description="Data inicial (formato: YYYY-MM-DD)"
     ),
-    data_fim: Optional[date] = Query(
+    data_fim: Optional[date_type] = Query(
         None, description="Data final (formato: YYYY-MM-DD)"
     ),
     current_user: models_user.User = Depends(deps.get_current_active_operational_user),
@@ -528,10 +528,10 @@ def get_eventos_por_mes(
 )
 def get_eventos_por_status(
     db: Session = Depends(deps.get_db),
-    data_inicio: Optional[date] = Query(
+    data_inicio: Optional[date_type] = Query(
         None, description="Data inicial (formato: YYYY-MM-DD)"
     ),
-    data_fim: Optional[date] = Query(
+    data_fim: Optional[date_type] = Query(
         None, description="Data final (formato: YYYY-MM-DD)"
     ),
     current_user: models_user.User = Depends(deps.get_current_active_operational_user),
@@ -571,10 +571,10 @@ def get_top_clientes(
     limit: int = Query(
         10, ge=1, le=100, description="Quantidade de clientes a retornar"
     ),
-    data_inicio: Optional[date] = Query(
+    data_inicio: Optional[date_type] = Query(
         None, description="Data inicial (formato: YYYY-MM-DD)"
     ),
-    data_fim: Optional[date] = Query(
+    data_fim: Optional[date_type] = Query(
         None, description="Data final (formato: YYYY-MM-DD)"
     ),
     current_user: models_user.User = Depends(deps.get_current_active_operational_user),
@@ -619,10 +619,10 @@ def get_despesas_por_insumo(
     limit: int = Query(
         10, ge=1, le=100, description="Quantidade de insumos a retornar"
     ),
-    data_inicio: Optional[date] = Query(
+    data_inicio: Optional[date_type] = Query(
         None, description="Data inicial (formato: YYYY-MM-DD)"
     ),
-    data_fim: Optional[date] = Query(
+    data_fim: Optional[date_type] = Query(
         None, description="Data final (formato: YYYY-MM-DD)"
     ),
     current_user: models_user.User = Depends(deps.get_current_active_operational_user),
@@ -669,10 +669,10 @@ def get_despesas_por_insumo(
 )
 def get_dashboard_data(
     db: Session = Depends(deps.get_db),
-    data_inicio: Optional[date] = Query(
+    data_inicio: Optional[date_type] = Query(
         None, description="Data inicial (formato: YYYY-MM-DD)"
     ),
-    data_fim: Optional[date] = Query(
+    data_fim: Optional[date_type] = Query(
         None, description="Data final (formato: YYYY-MM-DD)"
     ),
     top_limit: int = Query(

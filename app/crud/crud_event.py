@@ -135,8 +135,8 @@ def get_multi_eventos(
     limit: int = 100,
     id_cliente: Optional[int] = None,
     status_evento: Optional[str] = None,
-    data_inicio: Optional[date_type] = None,  # Usando date_type
-    data_fim: Optional[date_type] = None,  # Usando date_type
+    data_inicio: Optional[date_type] = None,
+    data_fim: Optional[date_type] = None,
     id_cidade: Optional[int] = None,
     id_buffet: Optional[int] = None,
     order_by: str = "data_evento",
